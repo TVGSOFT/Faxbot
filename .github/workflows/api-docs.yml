@@ -44,25 +44,7 @@ jobs:
             # Enhanced metadata for professional docs
             spec['info'].update({
                 'title': 'Faxbot API',
-                'description': '''The first and only open-source, self-hostable fax API. Send faxes with a single function call.
-
-## Features
-- Modern REST API for fax transmission
-- Multiple backend options (Phaxio cloud, Sinch cloud, self-hosted SIP/Asterisk)
-- Hybrid backend support (different providers for sending vs receiving)
-- AI assistant integration via MCP
-- HIPAA-aligned controls for healthcare deployments
-
-## Authentication
-All endpoints require an API key passed in the X-API-Key header:
-- Use the Admin Console to generate API keys with appropriate scopes
-- Format: fbk_live_<keyId>_<secret>
-
-## Quick Start
-1. Create an API key in the Admin Console
-2. Configure your backend provider (Phaxio, Sinch, or SIP)
-3. Send your first fax with POST /fax
-                '''.strip(),
+                'description': 'The first and only open-source, self-hostable fax API. Send faxes with a single function call. Features hybrid backend support, AI integration, and HIPAA-aligned controls.',
                 'version': '1.0.0',
                 'contact': {
                     'name': 'Faxbot Support',
