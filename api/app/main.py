@@ -50,7 +50,20 @@ except Exception:  # pragma: no cover - optional
 from pydantic import BaseModel
 
 
-app = FastAPI(title="Faxbot API", version="1.0.0")
+app = FastAPI(
+    title="Faxbot API",
+    version="1.0.0",
+    description="The first and only open-source, self-hostable fax API. Send faxes with a single function call.",
+    contact={
+        "name": "Faxbot Support",
+        "url": "https://faxbot.net",
+        "email": "support@faxbot.net",
+    },
+    license_info={
+        "name": "MIT",
+        "url": "https://github.com/dmontgomery40/faxbot/blob/main/LICENSE",
+    },
+)
 # Expose phaxio_service module for tests that reference app.phaxio_service
 from . import phaxio_service as _phaxio_module  # noqa: E402
 app.phaxio_service = _phaxio_module  # type: ignore[attr-defined]
