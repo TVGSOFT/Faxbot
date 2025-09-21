@@ -220,10 +220,7 @@ jobs:
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else
-          git commit -m "Update API documentation from faxbot@$(cd .. && git rev-parse --short HEAD)
-
-Auto-generated from development branch
-$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          git commit -m "Update API documentation from faxbot@$(cd .. && git rev-parse --short HEAD) - Auto-generated $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           git push origin main
           echo "✅ API documentation deployed to faxbot.net/api/"
         fi
