@@ -55,6 +55,7 @@ logs/
 
 # Project-specific
 /AGENTS.md
+AGENTS.md
 
 # Ignore built sites and vendor
 _site/
