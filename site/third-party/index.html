@@ -172,6 +172,8 @@
         </button>
       </nav>
       
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
     </form>
     <div class="md-search__output">
       <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
@@ -223,7 +225,9 @@
 
 
 
-<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="Faxbot Docs" class="md-nav__button md-logo" aria-label="Faxbot Docs" data-md-component="logo">
       
@@ -311,7 +315,9 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
@@ -528,7 +534,9 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
         
           
           <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
@@ -647,7 +655,9 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
         
           
           <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
@@ -788,7 +798,9 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
         
           
           <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
@@ -861,7 +873,9 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
         
           
           <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
@@ -1047,7 +1061,9 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15" >
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_15" >
         
           
           <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="">
@@ -1120,7 +1136,9 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_16" >
         
           
           <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="">
@@ -1239,7 +1257,9 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17" >
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_17" >
         
           
           <label class="md-nav__link" for="__nav_17" id="__nav_17_label" tabindex="">
@@ -1292,7 +1312,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../archive/backends-overview.md" class="md-nav__link">
+      <a href="../archive/backends-overview/" class="md-nav__link">
         
   
   
@@ -1322,24 +1342,6 @@
               </div>
             
             
-              
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-</nav>
-                  </div>
-                </div>
-              </div>
-            
           
           
             <div class="md-content" data-md-component="content">
@@ -1359,38 +1361,37 @@
 
 <h1 id="thirdparty-references">Third‑Party References<a class="headerlink" href="#thirdparty-references" title="Permanent link">&para;</a></h1>
 <p>Provider docs
-- Phaxio API reference (v2/v2.1): <a href="https://www.phaxio.com/docs/api/v2/">https://www.phaxio.com/docs/api/v2/</a>
-  - Create and send a fax (content_url): <a href="https://www.phaxio.com/docs/api/v2.1/faxes/create_and_send_fax">https://www.phaxio.com/docs/api/v2.1/faxes/create_and_send_fax</a>
-  - Send fax webhooks (callbacks): <a href="https://www.phaxio.com/docs/api/v2.1/faxes/send_webhooks">https://www.phaxio.com/docs/api/v2.1/faxes/send_webhooks</a>
-  - HIPAA guidance: <a href="https://www.phaxio.com/docs/security/hipaa">https://www.phaxio.com/docs/security/hipaa</a>
-- Sinch Fax API v3
-  - Overview: <a href="https://developers.sinch.com/docs/fax/overview/">https://developers.sinch.com/docs/fax/overview/</a>
-  - API Reference: <a href="https://developers.sinch.com/docs/fax/api-reference/">https://developers.sinch.com/docs/fax/api-reference/</a>
-- Asterisk (self‑hosted backend)
-- Asterisk Manager Interface (AMI): <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+Manager+Interface+(AMI)">https://wiki.asterisk.org/wiki/display/AST/Asterisk+Manager+Interface+(AMI)</a>
-- Fax overview: <a href="https://wiki.asterisk.org/wiki/display/AST/Fax">https://wiki.asterisk.org/wiki/display/AST/Fax</a>
-- Application SendFAX: <a href="https://wiki.asterisk.org/wiki/display/AST/Application_SendFAX">https://wiki.asterisk.org/wiki/display/AST/Application_SendFAX</a>
-- FreeSWITCH (self‑hosted backend)
-- FreeSWITCH Explained: <a href="https://developer.signalwire.com/freeswitch/FreeSWITCH-Explained/">https://developer.signalwire.com/freeswitch/FreeSWITCH-Explained/</a>
-- mod_spandsp (fax): <a href="http://files.freeswitch.org/api/mod_spandsp.html">http://files.freeswitch.org/api/mod_spandsp.html</a>
-- Dialplan Reference: <a href="https://freeswitch.org/confluence/display/FREESWITCH/Dialplan+Reference">https://freeswitch.org/confluence/display/FREESWITCH/Dialplan+Reference</a>
-- fs_cli: <a href="https://freeswitch.org/confluence/display/FREESWITCH/fs_cli">https://freeswitch.org/confluence/display/FREESWITCH/fs_cli</a>
-- SignalWire
-- Compatibility (Twilio‑style) API: <a href="https://developer.signalwire.com/compatibility-api/reference/overview">https://developer.signalwire.com/compatibility-api/reference/overview</a>
-- Fax via Compatibility API: <a href="https://developer.signalwire.com/compatibility-api/reference/send-a-fax">https://developer.signalwire.com/compatibility-api/reference/send-a-fax</a></p>
+- Phaxio API (v2/v2.1):
+  - Reference: <a href="https://www.phaxio.com/docs/api/v2/">docs</a>
+  - Create and send a fax: <a href="https://www.phaxio.com/docs/api/v2.1/faxes/create_and_send_fax">guide</a>
+  - Send fax webhooks: <a href="https://www.phaxio.com/docs/api/v2.1/faxes/send_webhooks">callbacks</a>
+  - HIPAA: <a href="https://www.phaxio.com/docs/security/hipaa">security</a>
+- Sinch Fax API v3:
+  - Overview: <a href="https://developers.sinch.com/docs/fax/overview/">docs</a>
+  - API Reference: <a href="https://developers.sinch.com/docs/fax/api-reference/">reference</a>
+- Asterisk (self‑hosted):
+  - AMI: <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+Manager+Interface+(AMI)">Asterisk Manager Interface</a>
+  - Fax overview: <a href="https://wiki.asterisk.org/wiki/display/AST/Fax">docs</a>
+  - Application: <a href="https://wiki.asterisk.org/wiki/display/AST/Application_SendFAX">SendFAX</a>
+- FreeSWITCH (self‑hosted):
+  - Overview: <a href="https://developer.signalwire.com/freeswitch/FreeSWITCH-Explained/">FreeSWITCH Explained</a>
+  - Fax module: <a href="http://files.freeswitch.org/api/mod_spandsp.html">mod_spandsp</a>
+  - Dialplan: <a href="https://freeswitch.org/confluence/display/FREESWITCH/Dialplan+Reference">reference</a>
+  - CLI: <a href="https://freeswitch.org/confluence/display/FREESWITCH/fs_cli">fs_cli</a>
+- SignalWire (Twilio‑style):
+  - API overview: <a href="https://developer.signalwire.com/compatibility-api/reference/overview">compatibility API</a>
+  - Fax: <a href="https://developer.signalwire.com/compatibility-api/reference/send-a-fax">send a fax</a></p>
 <p>Tools
-- Ghostscript (PDF↔TIFF utilities): <a href="https://ghostscript.com/docs/">https://ghostscript.com/docs/</a>
-- Cloudflare Tunnel
-- Overview: <a href="https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/">https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/</a>
-- Quick Tunnels (trycloudflare): <a href="https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/">https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/</a>
-- ngrok (HTTP tunnels): <a href="https://ngrok.com/docs/guides/http/">https://ngrok.com/docs/guides/http/</a></p>
+- Ghostscript (PDF↔TIFF): <a href="https://ghostscript.com/docs/">docs</a>
+- Cloudflare Tunnel: <a href="https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/">overview</a>, <a href="https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/">Quick Tunnels</a>
+- ngrok (HTTP tunnels): <a href="https://ngrok.com/docs/guides/http/">guide</a></p>
 <p>Object storage (S3)
-- AWS S3 SSE‑KMS: <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html">https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html</a>
-- S3‑compatible platforms (e.g., MinIO): <a href="https://min.io/">https://min.io/</a></p>
+- AWS S3 SSE‑KMS: <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html">guide</a>
+- S3‑compatible (MinIO): <a href="https://min.io/">site</a></p>
 <p>OAuth / JWT (MCP SSE)
-- OpenID Connect Discovery 1.0: <a href="https://openid.net/specs/openid-connect-discovery-1_0.html">https://openid.net/specs/openid-connect-discovery-1_0.html</a>
-- JSON Web Key (JWK) RFC 7517: <a href="https://www.rfc-editor.org/rfc/rfc7517">https://www.rfc-editor.org/rfc/rfc7517</a>
-- JSON Web Token (JWT) RFC 7519: <a href="https://www.rfc-editor.org/rfc/rfc7519">https://www.rfc-editor.org/rfc/rfc7519</a></p>
+- OpenID Connect Discovery 1.0: <a href="https://openid.net/specs/openid-connect-discovery-1_0.html">spec</a>
+- JSON Web Key (JWK) RFC 7517: <a href="https://www.rfc-editor.org/rfc/rfc7517">spec</a>
+- JSON Web Token (JWT) RFC 7519: <a href="https://www.rfc-editor.org/rfc/rfc7519">spec</a></p>
 <p>Notes
 - Use the links above for provider‑specific troubleshooting; do not mix backend instructions.</p>
 
@@ -1447,7 +1448,7 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.top", "navigation.tracking", "content.code.copy", "content.action.edit"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.expand", "navigation.top", "navigation.tracking", "toc.integrate", "search.suggest", "search.highlight", "content.code.copy", "content.action.edit"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
       <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>

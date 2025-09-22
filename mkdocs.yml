@@ -10,8 +10,12 @@ theme:
   logo: assets/images/faxbot_full_logo.png
   features:
     - navigation.sections
+    - navigation.expand
     - navigation.top
     - navigation.tracking
+    - toc.integrate
+    - search.suggest
+    - search.highlight
     - content.code.copy
     - content.action.edit
   palette:
