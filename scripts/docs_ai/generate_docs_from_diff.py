@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+"""
+Docs Autopilot (LLM-assisted) — generates instructional docs updates from code changes.
+
+Modes:
+  - Plan (default): create a markdown checklist of suggested updates using heuristics (no network).
+  - LLM (optional): if OPENAI_API_KEY or ANTHROPIC_API_KEY is set, call the provider to produce patches.
+
+Usage:
+  python scripts/docs_ai/generate_docs_from_diff.py --base origin/development --target mkdocs \
+    [--llm openai|anthropic] [--apply]
+
+Notes:
+  - Never includes secrets/PHI in prompts; context is limited to public files (AGENTS.md, OpenAPI, .env.example, provider_traits.json).
+  - When --apply is used and LLM returns a unified diff, the tool attempts to apply it with `git apply`.
+"""
+import os
+import subprocess
+import json
+import shlex
+from pathlib import Path
+from typing import List, Optional
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def run(cmd: str, cwd: Optional[Path] = None, check: bool = True) -> str:
+    p = subprocess.run(cmd, cwd=str(cwd or ROOT), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if check and p.returncode != 0:
+        raise RuntimeError(f"Command failed: {cmd}\n{p.stderr}")
+    return p.stdout
+
+
+def git_diff_names(base: str) -> List[str]:
+    out = run(f"git diff --name-only {shlex.quote(base)}..HEAD")
+    return [line.strip() for line in out.splitlines() if line.strip()]
+
+
+def read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except Exception:
+        return ""
+
+
+def build_plan(base_ref: str) -> str:
+    changed = git_diff_names(base_ref)
+    # High-signal inputs
+    agents = read_text(ROOT / "AGENTS.md")
+    openapi_json = read_text(ROOT / "openapi.json") or read_text(ROOT / "api" / "openapi.json")
+    traits = read_text(ROOT / "config" / "provider_traits.json")
+    env_example = read_text(ROOT / ".env.example")
+
+    bullets = []
+    if any(p.startswith("api/app/") or p == "api/openapi.json" for p in changed):
+        bullets.append("Update API usage examples and error mapping in docs, align with OpenAPI.")
+    if any(p.startswith("api/admin_ui/") for p in changed):
+        bullets.append("Admin Console screenshots/flows may need refresh; verify tooltips and docsBase links.")
+    if any(p.startswith("config/") for p in changed):
+        bullets.append("Review provider traits and update backend‑specific guidance; avoid backend name gating.")
+    if any(p.endswith(".env") or p.endswith(".env.example") for p in changed):
+        bullets.append("Reflect new/changed environment variables in deployment docs and security notes.")
+    if any("sinch" in p.lower() or "phaxio" in p.lower() for p in changed):
+        bullets.append("Re-run inbound/outbound setup steps for the affected provider and update caveats.")
+    if not bullets:
+        bullets.append("No high‑signal changes detected; run periodic doc hygiene (links, anchors).")
+
+    plan = [
+        "# Docs Autopilot Plan (heuristic)",
+        f"Base: {base_ref}",
+        "", "## Changed files", *[f"- {p}" for p in changed[:200]],
+        "", "## Suggested updates", *[f"- {b}" for b in bullets],
+        "", "## Context snapshots",
+        "### AGENTS.md (excerpt)", agents[:3000],
+        "", "### provider_traits.json (excerpt)", (traits or "")[:2000],
+        "", "### .env.example (excerpt)", (env_example or "")[:2000],
+        "", "### OpenAPI (truncated)", (openapi_json or "")[:2000],
+    ]
+    return "\n".join(plan)
+
+
+def call_llm(prompt: str, provider: str) -> str:
+    provider = provider.lower().strip()
+    if provider == "openai":
+        key = os.getenv("OPENAI_API_KEY")
+        if not key:
+            raise RuntimeError("OPENAI_API_KEY not set")
+        import requests
+        url = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1/chat/completions")
+        model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+        data = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": "You are a senior technical writer. Output unified diffs only."},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.2,
+        }
+        r = requests.post(url, headers=headers, data=json.dumps(data), timeout=60)
+        r.raise_for_status()
+        out = r.json()["choices"][0]["message"]["content"]
+        return out
+    elif provider == "anthropic":
+        key = os.getenv("ANTHROPIC_API_KEY")
+        if not key:
+            raise RuntimeError("ANTHROPIC_API_KEY not set")
+        import requests
+        url = os.getenv("ANTHROPIC_API_BASE", "https://api.anthropic.com/v1/messages")
+        model = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-latest")
+        headers = {
+            "x-api-key": key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+        data = {
+            "model": model,
+            "max_tokens": 2000,
+            "temperature": 0.2,
+            "messages": [
+                {"role": "user", "content": prompt},
+            ],
+        }
+        r = requests.post(url, headers=headers, data=json.dumps(data), timeout=60)
+        r.raise_for_status()
+        out = r.json()["content"][0]["text"]
+        return out
+    else:
+        raise RuntimeError(f"Unsupported provider: {provider}")
+
+
+def main():
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--base", default="origin/development", help="Base ref to diff against")
+    ap.add_argument("--llm", choices=["openai", "anthropic"], default=None)
+    ap.add_argument("--apply", action="store_true", help="Attempt to apply returned unified diff")
+    args = ap.parse_args()
+
+    plan = build_plan(args.base)
+    if not args.llm:
+        out = ROOT / "mkdocs-docs-plan.md"
+        out.write_text(plan, encoding="utf-8")
+        print(f"Wrote plan: {out}")
+        return
+
+    # Build LLM prompt (no secrets). Ask for unified diffs editing MkDocs content under docs/ only.
+    prompt = f"""
+You are a senior technical writer for Faxbot. Based on the repo context and changes, propose concise updates to the instructional documentation (MkDocs, branch 'mkdocs').
+
+Constraints:
+- Only modify files under docs/ and mkdocs.yml.
+- Keep copy terse and consistent with existing tone.
+- Use provider traits (config/provider_traits.json) as truth. Do not mix backends.
+- Link API reference as https://faxbot.net/api/v1/ and Swagger as https://faxbot.net/api/v1/swagger where relevant.
+- Use Markdown headings and keep pages short.
+- Output only a single unified diff patch (git apply format) with context.
+
+=== AGENTS.md (excerpt) ===
+{plan}
+"""
+    patch = call_llm(prompt, args.llm)
+    # Save raw output
+    out_raw = ROOT / "mkdocs-docs-llm.patch"
+    out_raw.write_text(patch, encoding="utf-8")
+    print(f"LLM patch saved: {out_raw}")
+    if args.apply:
+        try:
+            run(f"git apply --index {shlex.quote(str(out_raw))}")
+            print("Patch applied to index. Review with git diff and commit.")
+        except Exception as e:
+            print(f"Failed to apply patch: {e}")
+
+
+if __name__ == "__main__":
+    main()
+
