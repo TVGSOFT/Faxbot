@@ -53,6 +53,22 @@
          <lastmod>2025-09-22</lastmod>
     </url>
     <url>
+         <loc>https://docs.faxbot.net/archive/mcp-integration-legacy/</loc>
+         <lastmod>2025-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.faxbot.net/developers/agents-audit/</loc>
+         <lastmod>2025-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.faxbot.net/developers/developers-backend/</loc>
+         <lastmod>2025-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.faxbot.net/developers/v3-phase-status/</loc>
+         <lastmod>2025-09-22</lastmod>
+    </url>
+    <url>
          <loc>https://docs.faxbot.net/go-live/</loc>
          <lastmod>2025-09-22</lastmod>
     </url>
@@ -138,6 +154,18 @@
     </url>
     <url>
          <loc>https://docs.faxbot.net/setup/sip-asterisk/</loc>
+         <lastmod>2025-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.faxbot.net/tools/api-tests/</loc>
+         <lastmod>2025-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.faxbot.net/tools/node-mcp-scripts/</loc>
+         <lastmod>2025-09-22</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.faxbot.net/tools/phaxio-e2e-test/</loc>
          <lastmod>2025-09-22</lastmod>
     </url>
     <url>

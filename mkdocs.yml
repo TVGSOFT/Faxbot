@@ -67,7 +67,17 @@ nav:
     - Images & PDFs: guides/images-and-pdfs.md
   - Tools:
     - Scripts & Tests: tools/scripts-and-tests.md
+    - Node MCP Scripts: tools/node-mcp-scripts.md
+    - API Tests: tools/api-tests.md
+    - Phaxio E2E Test: tools/phaxio-e2e-test.md
   - Terminal: terminal.md
   - API: api.md
   - API (Advanced):
     - Canonical Events: api/canonical-events.md
+  - Developers:
+    - Backend Internals: developers/developers-backend.md
+    - AGENTS.md Audit: developers/agents-audit.md
+    - v3 Phase Status: developers/v3-phase-status.md
+  - Archive:
+    - MCP Integration (Legacy): archive/mcp-integration-legacy.md
+    - Backends (Overview): archive/backends-overview.md
