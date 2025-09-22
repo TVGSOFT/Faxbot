@@ -11,6 +11,9 @@ theme:
   features:
     - navigation.sections
     - navigation.expand
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.indexes
     - navigation.top
     - navigation.tracking
     - toc.integrate
@@ -49,35 +52,44 @@ markdown_extensions:
       permalink: true
 nav:
   - Home: index.md
-  - AI Integration: mcp/index.md
-  - Backends:
-    - Phaxio: go-live/phaxio.md
-    - Sinch: go-live/sinch.md
-    - SIP/Asterisk: go-live/sip-asterisk.md
-  - SDKs: sdks/index.md
-  - Deployment: DEPLOYMENT.md
-  - Troubleshooting: troubleshooting.md
-  - Third-Party: third-party.md
+  - Getting started: getting-started.md
+  - Setup:
+    - Overview: setup/index.md
+    - Backends (Go‑Live): go-live/index.md
+    - Phaxio (Cloud): setup/phaxio.md
+    - Sinch (Cloud v3): setup/sinch.md
+    - SIP/Asterisk (Self‑hosted): setup/sip-asterisk.md
+    - Deployment: DEPLOYMENT.md
+    - Security:
+      - Overview: security/index.md
+      - Authentication: security/authentication.md
+      - OAuth/OIDC Setup: security/oauth-setup.md
+  - Reference:
+    - Overview: reference/index.md
+    - API: api.md
+    - API (Advanced):
+      - Canonical Events: api/canonical-events.md
+    - SDKs: sdks/index.md
+    - MCP:
+      - Overview: mcp/index.md
+      - Node: mcp/node.md
+      - Python: mcp/python.md
+      - Transports: mcp/transports.md
+  - Operations:
+    - Overview: operations/index.md
+    - Admin Console: admin-console.md
+    - Terminal: terminal.md
+    - Tools:
+      - Scripts & Tests: tools/scripts-and-tests.md
+      - Node MCP Scripts: tools/node-mcp-scripts.md
+      - API Tests: tools/api-tests.md
+      - Phaxio E2E Test: tools/phaxio-e2e-test.md
+    - Troubleshooting: troubleshooting.md
+    - Third-Party: third-party.md
   - Apps:
     - Overview: apps/index.md
     - iOS: apps/ios.md
     - Desktop (Electron): apps/electron.md
-  - Security:
-    - Overview: security/index.md
-    - Authentication: security/authentication.md
-    - OAuth/OIDC Setup: security/oauth-setup.md
-  - Admin Console: admin-console.md
-  - Guides:
-    - Images & PDFs: guides/images-and-pdfs.md
-  - Tools:
-    - Scripts & Tests: tools/scripts-and-tests.md
-    - Node MCP Scripts: tools/node-mcp-scripts.md
-    - API Tests: tools/api-tests.md
-    - Phaxio E2E Test: tools/phaxio-e2e-test.md
-  - Terminal: terminal.md
-  - API: api.md
-  - API (Advanced):
-    - Canonical Events: api/canonical-events.md
   - Developers:
     - Backend Internals: developers/developers-backend.md
     - AGENTS.md Audit: developers/agents-audit.md
