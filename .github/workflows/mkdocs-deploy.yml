@@ -27,6 +27,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install mkdocs mkdocs-material mike mkdocs-exclude
 
+      - name: Preflight build (sanity)
+        run: |
+          mkdocs build --strict
+
       - name: Configure Git author
         run: |
           git config user.name "GitHub Actions"
@@ -37,3 +41,16 @@ jobs:
           mike deploy --push --branch gh-pages latest "Latest"
           mike set-default --push --branch gh-pages latest
 
+      - name: Ensure CNAME at gh-pages root
+        run: |
+          set -e
+          git fetch origin gh-pages
+          git checkout gh-pages
+          echo "docs.faxbot.net" > CNAME
+          git add CNAME
+          if git diff --staged --quiet; then
+            echo "CNAME unchanged"
+          else
+            git commit -m "docs: add/update CNAME for custom domain"
+            git push origin gh-pages
+          fi
