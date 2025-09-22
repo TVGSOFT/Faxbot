@@ -5,6 +5,7 @@ repo_name: DMontgomery40/Faxbot
 edit_uri: edit/mkdocs/docs/
 theme:
   name: material
+  custom_dir: docs/overrides
   features:
     - navigation.sections
     - navigation.top
