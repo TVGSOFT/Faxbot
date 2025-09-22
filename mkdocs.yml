@@ -14,6 +14,12 @@ theme:
 plugins:
   - search
   - mike
+  - exclude:
+      glob:
+        - 'api/admin_ui/node_modules/**'
+        - 'api/**/node_modules/**'
+        - 'vendor/**'
+        - 'node_modules/**'
 markdown_extensions:
   - admonition
   - codehilite
