@@ -12,7 +12,7 @@ on:
         required: false
         default: 'openai'
       apply:
-        description: 'Attempt to apply returned patch and open PR to mkdocs'
+        description: 'Attempt to apply returned patch directly to mkdocs'
         required: false
         default: 'false'
   push:
@@ -57,7 +57,6 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.apply == 'true'
     permissions:
       contents: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -101,7 +100,7 @@ jobs:
           path: mkdocs-docs-llm.patch
           if-no-files-found: ignore
 
-      - name: Apply patch to mkdocs branch
+      - name: Apply patch to mkdocs branch and push
         run: |
           git checkout mkdocs
           git config user.email "actions@github.com"
@@ -120,12 +119,8 @@ jobs:
             git add docs/ai-proposal-*.md
           fi
           git status --porcelain
-          git commit -m "docs(ai): apply LLM-suggested updates" || echo "Nothing to commit"
-
-      - name: Create PR to mkdocs
-        uses: peter-evans/create-pull-request@v6
-        with:
-          branch: docs/ai-update-${{ github.run_id }}
-          base: mkdocs
-          title: "docs(ai): proposed updates from LLM"
-          body: "Automated proposal from Docs Autopilot. Review carefully."
+          if git commit -m "docs(ai): apply LLM-suggested updates"; then
+            git push origin mkdocs
+          else
+            echo "Nothing to commit"
+          fi
