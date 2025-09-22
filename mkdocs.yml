@@ -28,12 +28,11 @@ markdown_extensions:
       permalink: true
 nav:
   - Home: index.md
-
-  - AI Integration: ai-integration/index.md
+  - AI Integration: mcp/index.md
   - Backends:
-    - Phaxio: PHAXIO_SETUP.md
-    - Sinch: SINCH_SETUP.md
-    - SIP/Asterisk: SIP_SETUP.md
-  - Security: SECURITY.md
-  - Deployment: DEPLOYMENT.md
-  - API: API_REFERENCE.md
+    - Phaxio: go-live/phaxio.md
+    - Sinch: go-live/sinch.md
+    - SIP/Asterisk: go-live/sip-asterisk.md
+  - SDKs: sdks/index.md
+  - Deployment: deployment.md
+  - API: api.md
