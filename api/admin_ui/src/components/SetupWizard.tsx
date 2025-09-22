@@ -68,7 +68,7 @@ function SetupWizard({ client, onDone, docsBase }: SetupWizardProps) {
   const [verifyFound, setVerifyFound] = useState<any | null>(null);
   const [callbacks, setCallbacks] = useState<any | null>(null);
   const ob = config.outbound_backend || config.backend;
-  const ib = config.inbound_backend;
+  // const ib = config.inbound_backend; // unused
 
   const steps = ['Choose Providers', 'Configure Credentials', 'Security Settings', 'Apply & Export'];
 

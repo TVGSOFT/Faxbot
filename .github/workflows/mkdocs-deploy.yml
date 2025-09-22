@@ -1,0 +1,25 @@
+name: mkdocs-deploy
+on:
+  push:
+    branches: [ "mkdocs" ]
+permissions:
+  contents: write
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Deploy with mike
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(git rev-parse --short "$GITHUB_SHA")
+          mike deploy --push --branch gh-pages --update-aliases "$VERSION" latest
+          mike set-default --push --branch gh-pages latest
