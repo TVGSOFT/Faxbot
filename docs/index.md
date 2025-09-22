@@ -1,7 +1,7 @@
 # Faxbot
 
 <p align="center">
-  <img src="assets/images/faxbot_full_logo.png" alt="Faxbot" width="560" />
+  <img src="assets/images/faxbot_full_logo.png" alt="Faxbot" width="1000" height="1000" />
 </p>
 
 Open‑source, self‑hostable fax API with modular backends (Phaxio, Sinch, SIP/Asterisk), Admin Console, and MCP integration.
