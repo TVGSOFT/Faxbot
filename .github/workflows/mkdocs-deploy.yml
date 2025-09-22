@@ -41,7 +41,8 @@ jobs:
 
       - name: Deploy docs with mike to gh-pages
         run: |
-          mike deploy --push --branch gh-pages latest "Latest"
+          VERSION=$(git rev-parse --short HEAD)
+          mike deploy --push --branch gh-pages --update-aliases "$VERSION" latest
           mike set-default --push --branch gh-pages latest
 
       - name: Ensure CNAME at gh-pages root
