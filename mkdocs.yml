@@ -24,15 +24,15 @@ theme:
   palette:
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: blue
-      accent: blue
+      primary: indigo
+      accent: teal
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: blue
-      accent: blue
+      primary: indigo
+      accent: teal
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
@@ -108,12 +108,12 @@ nav:
     - Public Access & Tunnels: setup/public-access.md
     - Webhooks: setup/webhooks.md
     - Deployment: deployment.md
-    - Security:
-      - Overview: security/index.md
-      - Authentication: security/authentication.md
-      - OAuth/OIDC Setup: security/oauth-setup.md
-      - Network & Transports: security/network.md
-      - HIPAA Requirements: HIPAA_REQUIREMENTS.md
+  - Security:
+    - Overview: security/index.md
+    - Authentication: security/authentication.md
+    - OAuth/OIDC Setup: security/oauth-setup.md
+    - Network & Transports: security/network.md
+    - HIPAA Requirements: HIPAA_REQUIREMENTS.md
   - Operations:
     - Overview: operations/index.md
     - Inbound Receiving: inbound.md

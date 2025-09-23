@@ -3,19 +3,19 @@
 
 New to fax? Start here. This wizard gets you sending in minutes and explains each choice in plain language, with direct links to the third‑party pages you’ll need.
 
-What you’re choosing
+## What you’re choosing
 - Phaxio by Sinch (cloud): A developer fax API (Phaxio is part of Sinch). Simple and reliable. Two flavors in Faxbot:
   - “Phaxio” flow: Phaxio fetches your PDF from your server via a public URL. Best if you already have a domain or can run a tunnel. Supports webhooks to update status.
   - “Sinch (Direct Upload)”: Faxbot uploads the PDF directly to Sinch. Best if you do not have a public URL or domain yet. Send-only works without webhooks.
 - Documo mFax (cloud): Direct upload to Documo. No domain/tunnel required. Good beginner option alongside Sinch.
 - SIP / Asterisk (self‑hosted): No third‑party cloud, uses your SIP trunk. More advanced; skip for now if you’re just getting started.
 
-Do I need a domain?
-- No, if you pick “Sinch (Direct Upload)”. You can send faxes without any public URL.
-- Yes (or a tunnel) if you pick “Phaxio” and want status callbacks or if Phaxio must fetch your PDF from your server.
-- You can always add a domain later. For quick tests, use the included tunnel script: `scripts/setup-phaxio-tunnel.sh`.
+!!! tip "Do I need a domain?"
+    - No, if you pick “Sinch (Direct Upload)”. You can send faxes without any public URL.  
+    - Yes (or a tunnel) if you pick “Phaxio” and want status callbacks or if Phaxio must fetch your PDF from your server.  
+    - You can always add a domain later. For quick tests, use the included tunnel script: `scripts/setup-phaxio-tunnel.sh`.
 
-Beginner 5‑minute path (no domain required)
+## Beginner 5‑minute path (no domain required)
 1) Choose backend: “Sinch (Direct Upload)”.
 2) Create a Sinch/Phaxio account:
    - Sign up: <https://dashboard.sinch.com/signup> (this is where Phaxio signups redirect — that’s normal).
@@ -27,7 +27,7 @@ Beginner 5‑minute path (no domain required)
    - API secret → `SINCH_API_SECRET`
 4) Click “Apply”. Then send a test fax in the Admin Console or via curl.
 
-Alternative: Documo (no domain required)
+## Alternative: Documo (no domain required)
 1) Choose backend: “Documo (mFax)”.
 2) Create an account and API key:
    - Sign up: <https://www.mfax.io/pricing>
@@ -38,8 +38,7 @@ Alternative: Documo (no domain required)
    - Optional: enable sandbox → `DOCUMO_SANDBOX=true`
 4) Click “Apply”, then send a test fax. No public URL is required for sending.
 
-
-If you have a domain (or can run a temporary tunnel)
+## If you have a domain (or can run a temporary tunnel)
 1) Choose backend: “Phaxio (Recommended)”.
 2) Create an account and get credentials:
    - Phaxio site: <https://www.phaxio.com> → Sign Up takes you to Sinch (expected).
@@ -55,30 +54,30 @@ If you have a domain (or can run a temporary tunnel)
    - Paste your API key/secret
 5) Click “Apply”, then send a test fax. Status updates arrive via callback (HMAC verified by default).
 
-Security profile
+## Security profile
 - HIPAA (strict): requires API key for your Faxbot API, enforces HTTPS, enables audit logging, verifies provider signatures.
 - Non‑PHI (convenience): relaxed defaults for local/dev; you can switch to HIPAA later without changing providers.
 
-What is Phaxio? What is Sinch?
+## What is Phaxio? What is Sinch?
 - Phaxio is a developer‑focused fax API. It’s part of Sinch now. When you click “Sign Up” on phaxio.com, you’ll be redirected to a Sinch signup page — that is expected. Your credentials work with Faxbot’s Phaxio flow and the Sinch (direct upload) flow.
 
-Where do I find credentials?
+## Where do I find credentials?
 - Sinch dashboard (recommended): <https://dashboard.sinch.com>
   - Create a project → note “Project ID”
   - Create/locate API key + secret
 - Phaxio docs if you prefer the legacy console: <https://www.phaxio.com/docs/>
 
-Apply & reload
+## Apply & reload
 - “Apply” writes settings to the running API with safe defaults.
 - “Generate .env” gives you a copy‑ready file. If enabled, “Save .env to server” writes it for persistence.
 
-Helpful tips
+## Helpful tips
 - No domain? Pick “Sinch (Direct Upload)” and you can send immediately.
 - For Phaxio tests without a domain, run: `scripts/setup-phaxio-tunnel.sh` (uses Cloudflare Tunnel; falls back to ngrok if installed).
 - If a change affects persistent connections (e.g., Asterisk AMI), you’ll be prompted to restart the API.
 - Secrets are not stored in plugin manifests; they live in environment variables.
 
-Example .env snippets
+## Example .env snippets
 - Phaxio (HIPAA profile)
 ```
 FAX_BACKEND=phaxio
@@ -114,13 +113,39 @@ FAX_HEADER=Faxbot
 API_KEY=generate_a_strong_key
 ```
 
-Warnings and prompts
+## Warnings and prompts
 - Missing HTTPS on `PUBLIC_API_URL` with cloud backends → warning with quick‑fix link to the tunnel script.
 - Empty `API_KEY` in production → prompt to enable auth.
 - Ghostscript not found for SIP/Asterisk → warn that conversion/pages may be stubbed.
 
-Learn more
+## Learn more
 - Phaxio: [Backend setup](../setup/phaxio.md) • Official docs: https://www.phaxio.com/docs/
 - Sinch: [Backend setup](../setup/sinch.md) • Sign up: https://dashboard.sinch.com/signup • Docs: https://developers.sinch.com/docs/fax/overview/
 - SIP/Asterisk: [Backend setup](../setup/sip-asterisk.md)
 - Security: [Authentication](../security/authentication.md), [HIPAA](../HIPAA_REQUIREMENTS.md), [OAuth/OIDC](../security/oauth-setup.md)
+
+---
+
+## Quick test (optional)
+
+=== "Console"
+
+    - Use Admin Console → Send Fax to queue a test after applying settings.  
+    - Attach a small PDF or TXT (≤10 MB).  
+    - Watch status on Jobs; callbacks update status for Phaxio when reachable.
+
+=== "curl"
+
+    ```bash
+    # assumes API_KEY is enabled; replace placeholders
+    BASE="http://localhost:8080"
+    curl -X POST "$BASE/fax" \
+      -H "X-API-Key: $API_KEY" \
+      -F to=+15551234567 \
+      -F file=@./document.pdf
+    ```
+
+    ```bash
+    # check status later
+    curl -H "X-API-Key: $API_KEY" "$BASE/fax/$JOB_ID"
+    ```
