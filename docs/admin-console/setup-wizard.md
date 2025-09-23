@@ -75,43 +75,43 @@ New to fax? Start here. This wizard gets you sending in minutes and explains eac
     - You can always add a domain later. For quick tests, use the included tunnel script: `scripts/setup-phaxio-tunnel.sh`.
 
 ## Beginner 5‑minute path (no domain required)
-1) Choose backend: “Sinch (Direct Upload)”.
-2) Create a Sinch/Phaxio account:
+1. Choose backend: “Sinch (Direct Upload)”.
+2. Create a Sinch/Phaxio account:
    - Sign up: <https://dashboard.sinch.com/signup> (this is where Phaxio signups redirect — that’s normal).
    - After signup, create a project, then get your Project ID and API key/secret.
      - Help: Sinch Fax docs → <https://developers.sinch.com/docs/fax/overview/>
-3) In the wizard, paste:
+3. In the wizard, paste:
    - Project ID → `SINCH_PROJECT_ID`
    - API key → `SINCH_API_KEY`
    - API secret → `SINCH_API_SECRET`
-4) Click “Apply”. Then send a test fax in the Admin Console or via curl.
+4. Click “Apply”. Then send a test fax in the Admin Console or via curl.
 
 ## Alternative: Documo (no domain required)
-1) Choose backend: “Documo (mFax)”.
-2) Create an account and API key:
+1. Choose backend: “Documo (mFax)”.
+2. Create an account and API key:
    - Sign up: <https://www.mfax.io/pricing>
    - Enable API and create an API key in the Documo web app.
    - Docs: <https://docs.documo.com>
-3) In the wizard, paste:
+3. In the wizard, paste:
    - API key → `DOCUMO_API_KEY`
    - Optional: enable sandbox → `DOCUMO_SANDBOX=true`
-4) Click “Apply”, then send a test fax. No public URL is required for sending.
+4. Click “Apply”, then send a test fax. No public URL is required for sending.
 
 ## If you have a domain (or can run a temporary tunnel)
-1) Choose backend: “Phaxio (Recommended)”.
-2) Create an account and get credentials:
+1. Choose backend: “Phaxio (Recommended)”.
+2. Create an account and get credentials:
    - Phaxio site: <https://www.phaxio.com> → Sign Up takes you to Sinch (expected).
    - Direct signup: <https://dashboard.sinch.com/signup>
    - Get: `PHAXIO_API_KEY` and `PHAXIO_API_SECRET` (same as Sinch API key/secret in many accounts).
    - Official Phaxio docs: <https://www.phaxio.com/docs/>
-3) Make your API reachable over HTTPS:
+3. Make your API reachable over HTTPS:
    - Option A: use your domain, e.g. `https://api.yourdomain.com`
    - Option B: quick test tunnel → run `scripts/setup-phaxio-tunnel.sh` to get a temporary `https://...trycloudflare.com` URL.
-4) In the wizard, set:
+4. In the wizard, set:
    - `PUBLIC_API_URL` to your HTTPS URL
    - `PHAXIO_CALLBACK_URL` to `https://YOUR_URL/phaxio-callback`
    - Paste your API key/secret
-5) Click “Apply”, then send a test fax. Status updates arrive via callback (HMAC verified by default).
+5. Click “Apply”, then send a test fax. Status updates arrive via callback (HMAC verified by default).
 
 ## Security profile
 - HIPAA (strict): requires API key for your Faxbot API, enforces HTTPS, enables audit logging, verifies provider signatures.
