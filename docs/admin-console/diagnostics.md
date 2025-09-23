@@ -4,6 +4,7 @@
 Run environment checks and get targeted guidance.
 
 Checks
+
 - API health and version
 - Backend configuration
   - Phaxio: API keys present, callback URL reachability hints, signature verification state
@@ -18,14 +19,17 @@ Checks
   - API key required, HTTPS enforced, audit logging enabled, file size limit
 
 Actions
+
 - “Restart API” (if allowed) to reinitialize backends after settings changes
 - Copy suggested `.env` snippets for fixes
 
 If something fails
+
 - Follow the actionable link beside the check (e.g., Backends, Security)
 - See [Troubleshooting](../troubleshooting.md)
 
 Related docs
+
 - Backends: [Phaxio](../setup/phaxio.md), [Sinch](../setup/sinch.md), [SIP/Asterisk](../setup/sip-asterisk.md)
 - Security: [Authentication](../security/authentication.md), [HIPAA](../HIPAA_REQUIREMENTS.md), [OAuth/OIDC](../security/oauth-setup.md)
 - Deployment: [Guide](../deployment.md)

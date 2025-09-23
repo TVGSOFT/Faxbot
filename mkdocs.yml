@@ -160,7 +160,6 @@ nav:
     - Diagnostics Matrix: admin-console/diagnostics-matrix.md
     - API Keys: admin-console/api-keys.md
     - Plugin Builder: admin-console/plugin-builder.md
-    - Annotated Demo: admin-console/annotated-demo.md
   - Third-Party: third-party.md
   - Apps:
     - Overview: apps/index.md

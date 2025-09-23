@@ -23,10 +23,6 @@
   Generate outbound provider scaffolds.  
   [Open](admin-console/plugin-builder.md)
 
-- :material-image-search: **Annotated Demo**  
-  Guided, simulated console with callouts.  
-  [Open](admin-console/annotated-demo.md)
-
 </div>
 
 The Admin Console lets you manage keys, jobs, inbound inbox, diagnostics, and settings without editing `.env` by hand.
