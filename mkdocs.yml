@@ -41,8 +41,7 @@ plugins:
   - mike
   - redirects:
       redirect_maps:
-        admin-console/annotated-demo/index.md: admin-console/annotated-demo.md
-        admin-console/index.md: admin-console.md
+        # Note: avoid index.md -> same-route redirects; they cause loops
         backends/documo-setup.md: setup/documo.md
         backends/freeswitch-setup.md: setup/freeswitch.md
         backends/images-and-pdfs.md: guides/images-and-pdfs.md
@@ -53,17 +52,12 @@ plugins:
         backends/sip-setup.md: setup/sip-asterisk.md
         backends/test-mode.md: setup/test-mode.md
         backends/webhooks.md: setup/webhooks.md
-        deployment/index.md: deployment.md
         development/api-reference.md: api.md
         development/node-sdk.md: sdks/node.md
         development/python-sdk.md: sdks/python.md
         development/scripts-and-tests.md: tools/scripts-and-tests.md
         development/troubleshooting.md: troubleshooting.md
-        getting-started/contributing/index.md: getting-started/contributing.md
-        getting-started/index.md: getting-started.md
-        security/authentication/index.md: security/authentication.md
-        third-party/index.md: third-party.md
-        troubleshooting/index.md: troubleshooting.md
+        # Removed index.md redirects (loop risk): getting-started/, admin-console/, deployment/, security/authentication/, third-party/, troubleshooting/
 
   - exclude:
       glob:
