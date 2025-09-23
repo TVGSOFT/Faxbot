@@ -172,3 +172,5 @@ nav:
   - Archive:
     - MCP Integration (Legacy): archive/mcp-integration-legacy.md
     - Backends (Overview): archive/backends-overview.md
+extra_css:
+  - docs/overrides/extra.css

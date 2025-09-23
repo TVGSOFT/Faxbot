@@ -1,0 +1,8 @@
+.md-header__button.md-logo img {
+  height: 36px; /* enlarge header logo for readability */
+}
+
+/* Optional: tighten card spacing slightly on landings */
+.grid.cards > ul {
+  gap: 0.9rem;
+}
