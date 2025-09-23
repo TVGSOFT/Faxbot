@@ -22,7 +22,7 @@ Faxbot supports a lightweight outbound provider type defined by a JSON manifest.
 
 ---
 
-## Manifest schema (simplified)
+## Manifest schema
 
 :material-identifier: `id`
 : Provider ID (e.g., `acmefax`)
