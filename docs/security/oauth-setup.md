@@ -30,76 +30,76 @@ OAUTH_JWKS_URL="https://.../jwks.json"    # Optional, if not at the standard dis
 
 ### Auth0
 
-Issuer
+:material-web: Issuer
 : `https://YOUR_TENANT.auth0.com`
 
-Audience
+:material-target: Audience
 : your API Identifier (e.g., `faxbot-mcp`)
 
-JWKS
+:material-key-chain: JWKS
 : `https://YOUR_TENANT.auth0.com/.well-known/jwks.json`
 
-Docs
+:material-book-open-page-variant: Docs
 : - Create API (audience): https://auth0.com/docs/get-started/apis/enable-api-authorization  
   - JWKS and token validation: https://auth0.com/docs/secure/tokens/json-web-tokens/json-web-key-sets  
   - Client credentials flow: https://auth0.com/docs/get-started/authentication-and-authorization-flow/client-credentials-flow
 
-### Okta
+:material-shield-account: Okta
 
-Issuer
+:material-web: Issuer
 : `https://YOUR_DOMAIN.okta.com/oauth2/default` (or your custom auth server)
 
-Audience
+:material-target: Audience
 : the custom API audience you configure
 
-JWKS
+:material-key-chain: JWKS
 : ``${issuer}/v1/keys`` (Okta uses `/v1/keys`, not the generic `/.well-known/jwks.json`)
 
-Docs
+:material-book-open-page-variant: Docs
 : - Authorization servers & discovery: https://developer.okta.com/docs/guides/customize-authz-server/main/  
   - Validate access tokens / JWKS: https://developer.okta.com/docs/guides/validate-access-tokens/main/
 
-### Microsoft Entra ID (Azure AD)
+:material-microsoft-azure: Microsoft Entra ID (Azure AD)
 
-Issuer
+:material-web: Issuer
 : `https://login.microsoftonline.com/<TENANT_ID>/v2.0`
 
-Audience
+:material-target: Audience
 : App Registration → “Expose an API” → Application ID URI (or a custom ID you set)
 
-JWKS
+:material-key-chain: JWKS
 : `https://login.microsoftonline.com/<TENANT_ID>/discovery/v2.0/keys`
 
-Docs
+:material-book-open-page-variant: Docs
 : - OIDC discovery: https://learn.microsoft.com/azure/active-directory/develop/v2-protocols-oidc  
   - App registration / Expose an API: https://learn.microsoft.com/azure/active-directory/develop/quickstart-configure-app-expose-web-apis
 
-### Google Identity (Workforce/Cloud)
+:material-google: Google Identity (Workforce/Cloud)
 
-Issuer
+:material-web: Issuer
 : `https://accounts.google.com`
 
-Audience
+:material-target: Audience
 : your audience string; ensure your token provider includes it in `aud`
 
-JWKS
+:material-key-chain: JWKS
 : `https://www.googleapis.com/oauth2/v3/certs`
 
-Docs
+:material-book-open-page-variant: Docs
 : - OIDC discovery: https://accounts.google.com/.well-known/openid-configuration
 
-### Keycloak (self‑hosted)
+:material-shield-lock: Keycloak (self‑hosted)
 
-Issuer
+:material-web: Issuer
 : `https://YOUR_HOST/realms/YOUR_REALM`
 
-Audience
+:material-target: Audience
 : client ID or custom audience claim (depends on realm configuration)
 
-JWKS
+:material-key-chain: JWKS
 : ``${issuer}/protocol/openid-connect/certs``
 
-Docs
+:material-book-open-page-variant: Docs
 : - OpenID Connect endpoints: https://www.keycloak.org/docs/latest/securing_apps/#openid-connect-endpoints
 
 !!! tip
