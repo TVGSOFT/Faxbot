@@ -3,10 +3,9 @@
 The iOS app lets you send faxes and check statuses from your phone. It connects to your own Faxbot server.
 
 !!! success "Now on TestFlight"
-    The iOS companion is available via TestFlight. Join from the apps page:  
-    https://faxbot.net/apps/ios/
+    The iOS companion is available via TestFlight. Email david@faxbot.net for an invite.
 
-[:material-apple-ios: Join TestFlight](https://faxbot.net/apps/ios/){ .md-button .md-button--primary }
+[:material-email: Request Invite](mailto:david@faxbot.net?subject=Faxbot%20iOS%20TestFlight%20Invite){ .md-button .md-button--primary }
 
 ## Key points
 
