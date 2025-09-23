@@ -17,12 +17,12 @@ OAUTH_JWKS_URL="https://.../jwks.json"    # Optional, if not at the standard dis
 ```
 
 ## General steps (any provider)
-1) Create or identify an API/resource in your IdP.
-   - Set an identifier value (this becomes the `aud` claim). Example: `faxbot-mcp`.
+1) Create or identify an API/resource in your IdP.  
+   :material-target: Set an identifier value (this becomes the `aud` claim). Example: `faxbot-mcp`.
 2) Create a client/app that can obtain access tokens for that API (client credentials or the flow used by your client).
-3) Find your issuer URL and JWKS URL.
-   - The issuer is the base of your OIDC realm/tenant.
-   - The JWKS URL is advertised as `jwks_uri` in the OIDC discovery document at `${issuer}/.well-known/openid-configuration`.
+3) Find your issuer URL and JWKS URL.  
+   :material-web: The issuer is the base of your OIDC realm/tenant.  
+   :material-key-chain: The JWKS URL is advertised as `jwks_uri` in the OIDC discovery document at `${issuer}/.well-known/openid-configuration`.
 4) Export env vars and start the SSE server (Node or Python).
 5) Obtain a token from the IdP and connect to `/sse` with `Authorization: Bearer <token>`.
 

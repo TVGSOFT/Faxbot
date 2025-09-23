@@ -3,6 +3,11 @@
 
 Open‑source, self‑hostable fax API with modular backends, a mobile‑ready Admin Console, and AI assistant tooling.
 
+[:material-rocket-launch: Get Started](getting-started.md){ .md-button .md-button--primary }
+[:material-monitor-dashboard: Admin Console](admin-console.md){ .md-button }
+[:material-shield-lock: Security](security/index.md){ .md-button }
+[:material-play: Admin Demo](admin-demo.md){ .md-button }
+
 <br/>
 
 <div class="grid cards" markdown>

@@ -2,7 +2,8 @@
 
 Explore an interactive, simulated Faxbot Admin Console to learn the workflow without connecting to providers.
 
-- Live demo: [https://faxbot.net/admin-demo/](https://faxbot.net/admin-demo/)
+[:material-play: Open Live Demo](https://faxbot.net/admin-demo/){ .md-button .md-button--primary }
+[:material-cog: Admin Console Docs](admin-console.md){ .md-button }
 - No files are transmitted; all data is in‑browser only
 - Try Inbox/Outbox, Compose, Contacts, and Settings views
 

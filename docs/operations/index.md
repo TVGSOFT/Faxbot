@@ -2,6 +2,9 @@
 
 Operate and troubleshoot Faxbot day to day.
 
+[:material-stethoscope: Diagnostics](../admin-console/diagnostics.md){ .md-button .md-button--primary }
+[:material-console: Terminal](../terminal.md){ .md-button }
+
 ## Areas
 
 - [Admin Console](../admin-console.md)

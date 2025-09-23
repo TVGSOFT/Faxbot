@@ -3,6 +3,10 @@
 
 Welcome to Faxbot! This section will help you get up and running quickly.
 
+[:material-wrench: Setup Wizard](admin-console/setup-wizard.md){ .md-button .md-button--primary }
+[:material-monitor-dashboard: Admin Console](admin-console.md){ .md-button }
+[:material-cloud-lock: Deployment](deployment.md){ .md-button }
+
 <div class="grid cards" markdown>
 
 - :material-rocket-launch: **Launch Faxbot**  

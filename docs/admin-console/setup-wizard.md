@@ -3,6 +3,9 @@
 
 New to fax? Start here. This wizard gets you sending in minutes and explains each choice in plain language, with direct links to the third‑party pages you’ll need.
 
+[:material-book-open-variant: Backends Guide](../setup/index.md){ .md-button }
+[:material-shield-lock: Security Docs](../security/index.md){ .md-button }
+
 ## What you’re choosing
 - Phaxio by Sinch (cloud): A developer fax API (Phaxio is part of Sinch). Simple and reliable. Two flavors in Faxbot:
   - “Phaxio” flow: Phaxio fetches your PDF from your server via a public URL. Best if you already have a domain or can run a tunnel. Supports webhooks to update status.
