@@ -1,7 +1,10 @@
 # Faxbot
 
 <div class="home-hero" align="center" markdown>
-<img src="assets/images/faxbot_full_logo.png" alt="Faxbot logo" width="360" height="360" />
+<picture>
+  <source srcset="assets/images/faxbot_mini_banner_light.png" media="(prefers-color-scheme: light)">
+  <img src="assets/images/faxbot_mini_banner_dark.png" alt="Faxbot logo" style="max-width: 680px; width: 100%; height: auto;" />
+</picture>
 
 Open‑source, self‑hostable fax API with modular backends, a mobile‑ready Admin Console, and AI assistant tooling.
 
