@@ -2,8 +2,22 @@
 
 Deep dives and contracts for building with Faxbot.
 
-Includes
-- API reference (external): ../api.md
-- SDKs (Node/Python): ../sdks/index.md
-- MCP integration and transports: ../mcp/index.md
-- Canonical events: ../api/canonical-events.md
+<div class="grid cards" markdown>
+
+- :material-api: **API Reference**  
+  Endpoints and models.  
+  [Docs](../api.md)
+
+- :material-code-tags-check: **SDKs**  
+  Node and Python clients.  
+  [Overview](../sdks/index.md)
+
+- :material-robot-excited: **MCP Integration**  
+  Servers, tools, transports.  
+  [Guide](../mcp/index.md)
+
+- :material-timeline-clock: **Canonical Events**  
+  Stable event names and payloads.  
+  [Reference](../api/canonical-events.md)
+
+</div>

@@ -1,6 +1,26 @@
 
 # Security & Compliance
 
+<div class="grid cards" markdown>
+
+- :material-shield-key: **Authentication (API Keys)**  
+  X‑API‑Key, scopes, rotation, and rate limits.  
+  [Open](authentication.md)
+
+- :material-lock: **OAuth/OIDC Setup**  
+  OAuth2/JWT for MCP SSE transports.  
+  [Open](oauth-setup.md)
+
+- :material-lan: **Network & Transports**  
+  HTTPS enforcement, callback security, transport notes.  
+  [Open](network.md)
+
+- :material-hospital: **HIPAA Requirements**  
+  Strict defaults and operational guidance.  
+  [Read](../HIPAA_REQUIREMENTS.md)
+
+</div>
+
 Faxbot is designed to handle sensitive healthcare data and can be configured for HIPAA compliance.
 
 ## Security Features

@@ -1,6 +1,34 @@
 
 # Admin Console
 
+<div class="grid cards" markdown>
+
+- :material-wrench: **Setup Wizard**  
+  Select backend, paste creds, apply.  
+  [Open](admin-console/setup-wizard.md)
+
+- :material-cog: **Settings**  
+  Backend/security/storage controls with helper text.  
+  [Open](admin-console/settings.md)
+
+- :material-stethoscope: **Diagnostics**  
+  Health checks and actionable fixes.  
+  [Open](admin-console/diagnostics.md)
+
+- :material-key-variant: **API Keys**  
+  Mint, rotate, revoke; scopes and rate limits.  
+  [Open](admin-console/api-keys.md)
+
+- :material-puzzle-outline: **Plugin Builder**  
+  Generate outbound provider scaffolds.  
+  [Open](admin-console/plugin-builder.md)
+
+- :material-image-search: **Annotated Demo**  
+  Guided, simulated console with callouts.  
+  [Open](admin-console/annotated-demo.md)
+
+</div>
+
 The Admin Console lets you manage keys, jobs, inbound inbox, diagnostics, and settings without editing `.env` by hand.
 
 - Local‑only by default; access is restricted to loopback in current builds

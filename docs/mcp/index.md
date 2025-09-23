@@ -1,5 +1,21 @@
 # MCP Integration
 
+<div class="grid cards" markdown>
+
+- :material-nodejs: **Node Server**  
+  stdio, HTTP, SSE transports.  
+  [Open](node.md)
+
+- :material-language-python: **Python Server**  
+  stdio and SSE transports.  
+  [Open](python.md)
+
+- :material-connection: **Transports**  
+  Capabilities and limits across stdio/HTTP/SSE.  
+  [Reference](transports.md)
+
+</div>
+
 Faxbot provides MCP servers in Node and Python with identical tools:
 - Tools: `send_fax`, `get_fax_status`
 - Transports:

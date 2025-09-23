@@ -2,6 +2,36 @@
 
 Pick your backend and environment, then deploy.
 
+<div class="grid cards" markdown>
+
+- :material-fax: **Phaxio (Cloud)**  
+  Fastest path with HIPAA options.  
+  [Guide](phaxio.md)
+
+- :material-cloud: **Sinch (Cloud v3)**  
+  Direct upload (“Phaxio by Sinch” accounts).  
+  [Guide](sinch.md)
+
+- :material-server: **SIP/Asterisk (Self‑hosted)**  
+  Full control with your SIP trunk.  
+  [Guide](sip-asterisk.md)
+
+- :material-cloud-lock: **Deployment**  
+  Checklist for public exposure and TLS.  
+  [Read](../deployment.md)
+
+- :material-shield-lock: **Security**  
+  Auth, OAuth/OIDC, HIPAA notes.  
+  [Overview](../security/index.md)
+
+- :material-lan: **Public Access & Tunnels**  
+  Quick options for evaluation.  
+  [Guide](public-access.md)
+
+</div>
+
+---
+
 What to choose
 - Cloud: Phaxio or Sinch Fax API v3
 - Self‑hosted: SIP/Asterisk (AMI + T.38)
@@ -13,9 +43,9 @@ Checklist
 - Storage and retention (inbound)
 
 Guides
-- Backends (Go‑Live): go-live/index.md
-- Phaxio (Cloud): phaxio.md
-- Sinch (Cloud v3): sinch.md
-- SIP/Asterisk (Self‑hosted): sip-asterisk.md
-- Deployment: ../DEPLOYMENT.md
-- Security overview: ../security/index.md
+- Backends (Go‑Live): [go-live/index.md](../go-live/index.md)
+- Phaxio (Cloud): [phaxio.md](phaxio.md)
+- Sinch (Cloud v3): [sinch.md](sinch.md)
+- SIP/Asterisk (Self‑hosted): [sip-asterisk.md](sip-asterisk.md)
+- Deployment: [../deployment.md](../deployment.md)
+- Security overview: [../security/index.md](../security/index.md)

@@ -2,8 +2,17 @@
 
 Thin, official clients for the Faxbot API. They call the unified Faxbot REST API (no direct Phaxio/Asterisk calls). Current version alignment: Python 1.0.2, Node 1.0.2.
 
-- Python: `faxbot`
-- Node.js: `faxbot`
+<div class="grid cards" markdown>
+
+- :material-language-python: **Python**  
+  Install and quick usage.  
+  [Jump to section](#python)
+
+- :material-nodejs: **Node.js**  
+  Install and quick usage.  
+  [Jump to section](#nodejs)
+
+</div>
 
 ## Python
 - Install:
