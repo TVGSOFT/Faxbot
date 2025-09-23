@@ -8,7 +8,7 @@
     - [Transports](../mcp/transports.md) · [OAuth/OIDC Setup](../security/oauth-setup.md)
 
 Demo
-<video src="../assets/faxbot_demo.mp4" width="100%" autoplay loop muted playsinline controls>
+<video src="../assets/faxbot_demo.mp4" width="100%" autoplay muted playsinline controls>
   <a href="../assets/faxbot_demo.mp4">Watch the demo video</a>
   (Your browser or GitHub may not inline-play videos; use the link.)
 </video>
