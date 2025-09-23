@@ -8,6 +8,12 @@
   </a>
 </p>
 
+<p align="center">
+  <a href="mailto:david@faxbot.net?subject=Faxbot%20iOS%20TestFlight%20Invite">
+    <img alt="iOS TestFlight" src="https://img.shields.io/badge/iOS-TestFlight-blue?style=for-the-badge&logo=apple" />
+  </a>
+</p>
+
 The first and only open-source, self-hostable fax API. Send faxes with a single function call.
 
 Yes, this repo might look overwhelming at first glance—that's only because Faxbot supports multiple backends (cloud and self-hosted), several MCP transport options for AI integration, and HIPAA-compliant security configurations. Most users will only need one path through this complexity.
@@ -132,3 +138,12 @@ Demo
   <a href="assets/faxbot_demo.mp4">Watch the demo video</a>
   (Your browser or GitHub may not inline-play videos; use the link.)
 </video>
+
+## iOS (TestFlight)
+
+Request an invite: [david@faxbot.net](mailto:david@faxbot.net?subject=Faxbot%20iOS%20TestFlight%20Invite)
+
+<p>
+  <img src="assets/faxbot_ios_connect-to-server.png" alt="Connect to Server" width="280" />
+  <img src="assets/faxbot_ios_txt-to-fax.png" alt="TXT to Fax" width="280" />
+</p>
