@@ -47,3 +47,68 @@ Admin Console integration
 Learn more
 - [Curated Registry](registry.md)
 - [HTTP Manifest Providers](manifest-http.md)
+
+---
+
+## Manifests available (examples)
+
+These example manifests live in the repo and can be used as starting points.
+
+- id `faxplus` — Fax.Plus
+- id `ringcentral` — RingCentral
+- id `interfax` — InterFAX
+- id `sfax` — Sfax (Consensus)
+- id `pamfax` — PamFax
+- id `dropbox_fax` — Dropbox Fax
+
+=== "RingCentral example"
+
+```json
+{
+  "id": "ringcentral",
+  "name": "RingCentral Fax API",
+  "auth": { "scheme": "bearer" },
+  "actions": {
+    "send_fax": {
+      "method": "POST",
+      "url": "https://platform.ringcentral.com/restapi/v1.0/account/~/extension/~/fax",
+      "body": { "kind": "multipart", "template": "request={\\"to\\":[{\\"phoneNumber\\":\\"{{to}}\\"}]}&attachment={{file}}" },
+      "response": { "faxId": "id" }
+    },
+    "get_status": {
+      "method": "GET",
+      "url": "https://platform.ringcentral.com/restapi/v1.0/account/~/message-store/{{fax_id}}",
+      "body": { "kind": "none", "template": "" },
+      "response": { "status": "messageStatus", "sentPages": "faxPageCount" }
+    }
+  },
+  "allowed_domains": ["platform.ringcentral.com"],
+  "timeout_ms": 15000
+}
+```
+
+=== "InterFAX example"
+
+```json
+{
+  "id": "interfax",
+  "name": "InterFAX API",
+  "auth": { "scheme": "basic" },
+  "actions": {
+    "send_fax": {
+      "method": "POST",
+      "url": "https://rest.interfax.net/outbound/faxes?faxNumber={{to}}",
+      "headers": { "Content-Location": "{{file_url}}", "Content-Type": "application/pdf" },
+      "body": { "kind": "none", "template": "" },
+      "response": { "faxId": "id" }
+    },
+    "get_status": {
+      "method": "GET",
+      "url": "https://rest.interfax.net/outbound/faxes/{{fax_id}}",
+      "body": { "kind": "none", "template": "" },
+      "response": { "status": "status" }
+    }
+  },
+  "allowed_domains": ["rest.interfax.net"]
+}
+```
