@@ -167,7 +167,6 @@ nav:
     - iOS: apps/ios.md
     - Desktop (Electron): apps/electron.md
   - Developers:
-    - Backend Internals: developers/developers-backend.md
     - AGENTS.md Audit: developers/agents-audit.md
     - v3 Phase Status: developers/v3-phase-status.md
   - Archive:
