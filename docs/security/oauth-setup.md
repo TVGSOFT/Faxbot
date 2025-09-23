@@ -29,43 +29,78 @@ OAUTH_JWKS_URL="https://.../jwks.json"    # Optional, if not at the standard dis
 ## Provider specifics and links
 
 ### Auth0
-- Issuer: `https://YOUR_TENANT.auth0.com`
-- Audience: your API Identifier (e.g., `faxbot-mcp`)
-- JWKS: `https://YOUR_TENANT.auth0.com/.well-known/jwks.json`
-- Docs:
-  - Create API (audience): https://auth0.com/docs/get-started/apis/enable-api-authorization
-  - JWKS and token validation: https://auth0.com/docs/secure/tokens/json-web-tokens/json-web-key-sets
+
+Issuer
+: `https://YOUR_TENANT.auth0.com`
+
+Audience
+: your API Identifier (e.g., `faxbot-mcp`)
+
+JWKS
+: `https://YOUR_TENANT.auth0.com/.well-known/jwks.json`
+
+Docs
+: - Create API (audience): https://auth0.com/docs/get-started/apis/enable-api-authorization  
+  - JWKS and token validation: https://auth0.com/docs/secure/tokens/json-web-tokens/json-web-key-sets  
   - Client credentials flow: https://auth0.com/docs/get-started/authentication-and-authorization-flow/client-credentials-flow
 
 ### Okta
-- Issuer: `https://YOUR_DOMAIN.okta.com/oauth2/default` (or your custom auth server)
-- Audience: the custom API audience you configure
-- JWKS: ``${issuer}/v1/keys`` (Okta uses `/v1/keys`, not the generic `/.well-known/jwks.json`)
-- Docs:
-  - Authorization servers & discovery: https://developer.okta.com/docs/guides/customize-authz-server/main/
+
+Issuer
+: `https://YOUR_DOMAIN.okta.com/oauth2/default` (or your custom auth server)
+
+Audience
+: the custom API audience you configure
+
+JWKS
+: ``${issuer}/v1/keys`` (Okta uses `/v1/keys`, not the generic `/.well-known/jwks.json`)
+
+Docs
+: - Authorization servers & discovery: https://developer.okta.com/docs/guides/customize-authz-server/main/  
   - Validate access tokens / JWKS: https://developer.okta.com/docs/guides/validate-access-tokens/main/
 
 ### Microsoft Entra ID (Azure AD)
-- Issuer: `https://login.microsoftonline.com/<TENANT_ID>/v2.0`
-- Audience: App Registration → “Expose an API” → Application ID URI (or a custom ID you set)
-- JWKS: `https://login.microsoftonline.com/<TENANT_ID>/discovery/v2.0/keys`
-- Docs:
-  - OIDC discovery: https://learn.microsoft.com/azure/active-directory/develop/v2-protocols-oidc
+
+Issuer
+: `https://login.microsoftonline.com/<TENANT_ID>/v2.0`
+
+Audience
+: App Registration → “Expose an API” → Application ID URI (or a custom ID you set)
+
+JWKS
+: `https://login.microsoftonline.com/<TENANT_ID>/discovery/v2.0/keys`
+
+Docs
+: - OIDC discovery: https://learn.microsoft.com/azure/active-directory/develop/v2-protocols-oidc  
   - App registration / Expose an API: https://learn.microsoft.com/azure/active-directory/develop/quickstart-configure-app-expose-web-apis
 
 ### Google Identity (Workforce/Cloud)
-- Issuer: `https://accounts.google.com`
-- Audience: your audience string; ensure your token provider includes it in `aud`
-- JWKS: `https://www.googleapis.com/oauth2/v3/certs`
-- Docs:
-  - OIDC discovery: https://accounts.google.com/.well-known/openid-configuration
+
+Issuer
+: `https://accounts.google.com`
+
+Audience
+: your audience string; ensure your token provider includes it in `aud`
+
+JWKS
+: `https://www.googleapis.com/oauth2/v3/certs`
+
+Docs
+: - OIDC discovery: https://accounts.google.com/.well-known/openid-configuration
 
 ### Keycloak (self‑hosted)
-- Issuer: `https://YOUR_HOST/realms/YOUR_REALM`
-- Audience: client ID or custom audience claim (depends on realm configuration)
-- JWKS: ``${issuer}/protocol/openid-connect/certs``
-- Docs:
-  - OpenID Connect endpoints: https://www.keycloak.org/docs/latest/securing_apps/#openid-connect-endpoints
+
+Issuer
+: `https://YOUR_HOST/realms/YOUR_REALM`
+
+Audience
+: client ID or custom audience claim (depends on realm configuration)
+
+JWKS
+: ``${issuer}/protocol/openid-connect/certs``
+
+Docs
+: - OpenID Connect endpoints: https://www.keycloak.org/docs/latest/securing_apps/#openid-connect-endpoints
 
 !!! tip
     JWKS paths vary by provider. If discovery doesn’t return the path you expect, set `OAUTH_JWKS_URL` explicitly (e.g., Okta `.../v1/keys`, Keycloak `/protocol/openid-connect/certs`).
