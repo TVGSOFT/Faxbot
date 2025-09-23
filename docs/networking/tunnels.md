@@ -3,23 +3,29 @@
 
 The iOS app requires a reachable URL for your Faxbot server. A tunnel provides secure connectivity from the app to your server even when it’s behind NAT.
 
-Options
+## Options
+
 - WireGuard (HIPAA‑capable)
   - Use your own WG server/router (e.g., Firewalla). Restrict access with firewall rules.
   - Keep AMI/SIP/UDPTL private; the tunnel is for API/Admin UI/iOS connectivity.
 - Tailscale (HIPAA‑capable)
   - Add your server to a Tailnet with ACLs. Treat Tailnet as a private network.
 - Cloudflare Quick Tunnel (dev only)
-  - Not HIPAA compliant (no BAA, ephemeral). Use only for non‑PHI testing.
+  - Not HIPAA‑compliant (no BAA; ephemeral). Use only for non‑PHI testing.
   - For HIPAA, consider a Named Tunnel with Access policies and a BAA.
 
-Admin Console
+!!! warning "HIPAA"
+    HIPAA users should avoid dev‑only tunnels for PHI. Prefer WireGuard or Tailscale with strict ACLs, and keep SIP/AMI private.
+
+## Admin Console
+
 - Configure the tunnel provider and test connectivity from the Console settings.
 - Generate a short‑lived iOS pairing code (no secrets in QR or UI).
 - Terminal and admin actions remain local‑only; do not expose via tunnels.
 
-Environment reference (examples)
-```
+## Environment reference (examples)
+
+```env
 TUNNEL_ENABLED=false
 TUNNEL_PROVIDER=none   # none|cloudflare|wireguard|tailscale
 
@@ -34,11 +40,13 @@ TAILSCALE_AUTHKEY=tskey-...
 TAILSCALE_HOSTNAME=faxbot-server
 ```
 
-Security notes
+## Security notes
+
 - HIPAA posture disables Cloudflare Quick Tunnel in the UI.
 - No PHI or secrets appear in logs/UI. Secrets are masked; pairing codes expire quickly.
-- PUBLIC_API_URL should be HTTPS in production; do not rely on dev tunnels for PHI.
+- `PUBLIC_API_URL` should be HTTPS in production; do not rely on dev tunnels for PHI.
 
-Troubleshooting
+## Troubleshooting
+
 - Use Scripts & Tests to tail tunnel logs (dev only) and run reachability checks.
 - Ensure Ghostscript is installed; check readiness/diagnostics if tests fail.
