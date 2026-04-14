@@ -267,10 +267,13 @@ export class AdminAPIClient {
   }
 
   // Send test fax
-  async sendFax(to: string, file: File): Promise<{ id: string; status: string }> {
+  async sendFax(to: string, file: File, scheduleAt?: string): Promise<{ id: string; status: string }> {
     const formData = new FormData();
     formData.append('to', to);
     formData.append('file', file);
+    if (scheduleAt) {
+      formData.append('schedule_at', scheduleAt);
+    }
 
     const res = await fetch(`${this.baseURL}/fax`, {
       method: 'POST',

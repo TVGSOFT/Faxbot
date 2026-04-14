@@ -88,9 +88,22 @@ function JobsList({ client }: JobsListProps) {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return '—';
     try {
-      return new Date(dateString).toLocaleString();
+      // API returns UTC timestamps without 'Z' — append it so JS parses as UTC
+      // then toLocaleString() converts to the browser's local timezone
+      const normalized = /Z$|[+-]\d{2}:\d{2}$/.test(dateString)
+          ? dateString
+          : dateString + 'Z';
+      return new Date(normalized).toLocaleString(undefined, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
     } catch {
       return dateString;
     }
@@ -180,6 +193,7 @@ function JobsList({ client }: JobsListProps) {
                     <TableCell sx={{ minWidth: 80, display: { xs: 'none', md: 'table-cell' } }}>Backend</TableCell>
                     <TableCell sx={{ minWidth: 60, display: { xs: 'none', md: 'table-cell' } }}>Pages</TableCell>
                     <TableCell sx={{ minWidth: 150, display: { xs: 'none', lg: 'table-cell' } }}>Error</TableCell>
+                    <TableCell sx={{ minWidth: 120 }}>Scheduled</TableCell>
                     <TableCell sx={{ minWidth: 120 }}>Created</TableCell>
                     <TableCell sx={{ minWidth: 120, display: { xs: 'none', sm: 'table-cell' } }}>Updated</TableCell>
                   </TableRow>
@@ -238,6 +252,11 @@ function JobsList({ client }: JobsListProps) {
                             {job.error}
                           </Typography>
                         )}
+                      </TableCell>
+                       <TableCell>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>
+                          {job.schedule_at && formatDate(job.schedule_at) || "Unknown"}
+                        </Typography>
                       </TableCell>
                       <TableCell>
                         <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>
@@ -320,6 +339,13 @@ function JobsList({ client }: JobsListProps) {
                 <ListItemText
                   primary="File Name"
                   secondary={selectedJob.file_name || 'Unknown'}
+                />
+              </ListItem>
+              <Divider />
+              <ListItem>
+                <ListItemText
+                  primary="Scheduled"
+                  secondary={selectedJob.schedule_at && formatDate(selectedJob.schedule_at) || 'Unknown'}
                 />
               </ListItem>
               <Divider />

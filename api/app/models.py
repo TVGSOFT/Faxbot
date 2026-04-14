@@ -15,5 +15,6 @@ class FaxJobOut(BaseModel):
     pages: Optional[int] = None
     backend: str = "sip"  # "sip" or "phaxio"
     provider_sid: Optional[str] = None  # Phaxio fax ID or other cloud provider ID
+    schedule_at: Optional[datetime] = None  # UTC timestamp for scheduled send; null = immediate
     created_at: datetime
     updated_at: datetime

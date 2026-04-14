@@ -10,6 +10,8 @@ import {
   Grow,
   useTheme,
   useMediaQuery,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import { 
   Send as SendIcon,
@@ -17,7 +19,12 @@ import {
   Description as DocumentIcon,
   CheckCircle as SuccessIcon,
   Error as ErrorIcon,
+  Schedule as ScheduleIcon,
 } from '@mui/icons-material';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import AdminAPIClient from '../api/client';
 import {
   ResponsiveTextField,
@@ -38,6 +45,11 @@ function SendFax({ client }: SendFaxProps) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ type: 'success' | 'error'; message: string; jobId?: string } | null>(null);
 
+  // Schedule state
+  const [enableSchedule, setEnableSchedule] = useState(false);
+  const [scheduleAt, setScheduleAt] = useState<Dayjs | null>(null);
+  const [scheduleAtError, setScheduleAtError] = useState<string | null>(null);
+
   // Validation states
   const [toNumberError, setToNumberError] = useState(false);
   const [fileError, setFileError] = useState(false);
@@ -56,7 +68,8 @@ function SendFax({ client }: SendFaxProps) {
     // Reset errors
     setToNumberError(false);
     setFileError(false);
-    
+    setScheduleAtError(null);
+
     // Validate inputs
     let hasError = false;
     
@@ -69,7 +82,18 @@ function SendFax({ client }: SendFaxProps) {
       setFileError(true);
       hasError = true;
     }
-    
+
+    // Validate schedule_at: must not be in the past
+    if (enableSchedule) {
+      if (!scheduleAt || !scheduleAt.isValid()) {
+        setScheduleAtError('Please select a valid date and time.');
+        hasError = true;
+      } else if (scheduleAt.isBefore(dayjs())) {
+        setScheduleAtError('Scheduled time cannot be in the past.');
+        hasError = true;
+      }
+    }
+
     if (hasError) {
       setResult({
         type: 'error',
@@ -82,17 +106,22 @@ function SendFax({ client }: SendFaxProps) {
     setResult(null);
 
     try {
-      const response = await client.sendFax(toNumber, file!);
+      const scheduleAtISO = enableSchedule && scheduleAt ? scheduleAt.toISOString() : undefined;
+      const response = await client.sendFax(toNumber, file!, scheduleAtISO);
       setResult({
         type: 'success',
-        message: `Fax queued successfully!`,
+        message: enableSchedule && scheduleAt
+          ? `Fax scheduled for ${scheduleAt.format('MMM D, YYYY h:mm A')}!`
+          : `Fax queued successfully!`,
         jobId: response.id,
       });
       
       // Clear form on success
       setToNumber('');
       setFile(null);
-      
+      setEnableSchedule(false);
+      setScheduleAt(null);
+
     } catch (err) {
       setResult({
         type: 'error',
@@ -110,6 +139,7 @@ function SendFax({ client }: SendFaxProps) {
   };
 
   return (
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
     <Box onKeyPress={handleKeyPress}>
       <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 3 }}>
         Send Fax
@@ -149,14 +179,69 @@ function SendFax({ client }: SendFaxProps) {
                   }}
                   accept=".pdf,.txt,application/pdf,text/plain"
                   helperText="PDF or TXT files only. Maximum size: 10MB"
-                  maxSize={10 * 1024 * 1024} // 10MB
+                  maxSize={10 * 1024 * 1024}
                   required
                   error={fileError}
                   errorMessage="Please select a PDF or TXT file to send"
                   icon={<DocumentIcon />}
                 />
 
-                <Box sx={{ 
+                {/* Schedule section */}
+                <Box>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={enableSchedule}
+                        onChange={(e) => {
+                          setEnableSchedule(e.target.checked);
+                          if (!e.target.checked) {
+                            setScheduleAt(null);
+                            setScheduleAtError(null);
+                          }
+                        }}
+                        color="primary"
+                      />
+                    }
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <ScheduleIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                        <Typography variant="subtitle2" fontWeight={600}>
+                          Schedule for later
+                        </Typography>
+                      </Box>
+                    }
+                  />
+
+                  {enableSchedule && (
+                    <Box sx={{ mt: 1.5, ml: 0.5 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                        Select a future date and time to schedule delivery
+                      </Typography>
+                      <DateTimePicker
+                        label="Schedule At"
+                        value={scheduleAt}
+                        onChange={(newValue) => {
+                          setScheduleAt(newValue);
+                          setScheduleAtError(null);
+                        }}
+                        minDateTime={dayjs().add(1, 'minute')}
+                        slotProps={{
+                          textField: {
+                            size: 'small',
+                            fullWidth: true,
+                            error: !!scheduleAtError,
+                            helperText: scheduleAtError ?? undefined,
+                            sx: {
+                              '& .MuiOutlinedInput-root': { borderRadius: 2 },
+                            },
+                          },
+                        }}
+                      />
+                    </Box>
+                  )}
+                </Box>
+
+                <Box sx={{
                   display: 'flex', 
                   gap: 2, 
                   mt: 3,
@@ -164,7 +249,7 @@ function SendFax({ client }: SendFaxProps) {
                 }}>
                   <Button
                     variant="contained"
-                    startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
+                    startIcon={loading ? <CircularProgress size={20} color="inherit" /> : enableSchedule ? <ScheduleIcon /> : <SendIcon />}
                     onClick={handleSend}
                     disabled={loading}
                     size="large"
@@ -178,7 +263,9 @@ function SendFax({ client }: SendFaxProps) {
                       fontWeight: 500,
                     }}
                   >
-                    {loading ? 'Sending...' : 'Send Fax'}
+                    {loading
+                      ? (enableSchedule ? 'Scheduling...' : 'Sending...')
+                      : (enableSchedule ? 'Schedule Fax' : 'Send Fax')}
                   </Button>
 
                   {(toNumber || file) && !loading && (
@@ -190,6 +277,9 @@ function SendFax({ client }: SendFaxProps) {
                         setResult(null);
                         setToNumberError(false);
                         setFileError(false);
+                        setEnableSchedule(false);
+                        setScheduleAt(null);
+                        setScheduleAtError(null);
                       }}
                       size="large"
                       fullWidth={isSmallMobile}
@@ -285,12 +375,25 @@ function SendFax({ client }: SendFaxProps) {
                     • You'll see real-time status updates there
                   </Typography>
                 </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 0.5 }}>
+                    Scheduling
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    • Toggle "Schedule for later" to pick a future date &amp; time<br />
+                    • Leave it off to send immediately<br />
+                    • Scheduled time must be in the future<br />
+                    • Scheduled faxes appear in the Jobs tab with a "scheduled" status
+                  </Typography>
+                </Box>
               </Stack>
             </ResponsiveFormSection>
           </Box>
         </Fade>
       </Box>
     </Box>
+    </LocalizationProvider>
   );
 }
 

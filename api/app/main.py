@@ -4,7 +4,7 @@ import re
 import uuid
 import asyncio
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import tempfile
 from typing import Optional, Any, List, Dict, cast
 import subprocess
@@ -27,7 +27,6 @@ from .conversion import ensure_dir, txt_to_pdf, pdf_to_tiff
 from .ami import ami_client
 from .phaxio_service import get_phaxio_service
 from .sinch_service import get_sinch_service
-from .signalwire_service import get_signalwire_service
 from .freeswitch_service import originate_txfax, fs_cli_available
 import hmac
 import hashlib
@@ -40,6 +39,7 @@ from .storage import get_storage, reset_storage
 from .auth import verify_db_key, create_api_key, list_api_keys, revoke_api_key, rotate_api_key
 from .plugins.http_provider import HttpManifest, HttpProviderRuntime
 from .signalwire_service import get_signalwire_service
+from .scheduler import init_scheduler, get_scheduler, shutdown_scheduler
 
 # v3 plugins (feature-gated)
 try:
@@ -289,6 +289,70 @@ async def on_startup():
     if not settings.fax_disabled and providerHasTrait("any", "requires_ami"):
         asyncio.create_task(ami_client.connect())
         ami_client.on_fax_result(_handle_fax_result)
+
+    # Start APScheduler (SQLAlchemy-backed) for deferred fax jobs
+    sched = init_scheduler()
+    sched.start()
+    # Re-register any orphaned 'scheduled' jobs that survived a server restart
+    if not settings.fax_disabled:
+        await _resume_scheduled_jobs(sched)
+
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    shutdown_scheduler()
+
+
+async def _resume_scheduled_jobs(sched: Any) -> None:
+    """Re-register 'scheduled' fax_jobs that have no APScheduler entry.
+
+    Called on startup to handle orphaned jobs after a crash or server restart.
+    - Jobs with a future schedule_at  → re-added to the scheduler.
+    - Jobs with a past schedule_at    → dispatched immediately via asyncio task.
+    """
+    from sqlalchemy import select as sa_select
+    now = datetime.utcnow()
+
+    with SessionLocal() as db:
+        pending = db.execute(
+            sa_select(FaxJob).where(cast(Any, FaxJob).status == "scheduled")
+        ).scalars().all()
+
+    if not pending:
+        return
+
+    resumed = 0
+    for job in pending:
+        j = cast(Any, job)
+
+        # Skip if APScheduler already tracks this job (jobstore survived restart)
+        if sched.get_job(f"fax_{j.id}") is not None:
+            continue
+
+        pdf_path = os.path.join(settings.fax_data_dir, f"{j.id}.pdf")
+        tiff_path = j.tiff_path
+        run_date = j.schedule_at  # naive UTC stored in DB
+
+        if run_date is None or run_date <= now:
+            # schedule_at already passed — dispatch immediately
+            asyncio.create_task(
+                _dispatch_fax_by_backend(j.id, j.to_number, pdf_path, tiff_path, j.backend)
+            )
+        else:
+            # Still in the future — re-register with the scheduler
+            sched.add_job(
+                _dispatch_fax_by_backend,
+                trigger="date",
+                run_date=run_date,
+                timezone="UTC",
+                args=[j.id, j.to_number, pdf_path, tiff_path, j.backend],
+                id=f"fax_{j.id}",
+                replace_existing=True,
+            )
+        resumed += 1
+
+    if resumed:
+        print(f"[scheduler] Resumed {resumed} pending scheduled fax job(s) on startup")
 
 
 def _handle_fax_result(event):
@@ -1743,6 +1807,7 @@ async def list_admin_jobs(
                     "backend": r.backend,
                     "pages": r.pages,
                     "error": sanitize_error(getattr(r, "error", None)),
+                    "schedule_at": r.schedule_at,
                     "created_at": r.created_at,
                     "updated_at": r.updated_at,
                 }
@@ -1765,6 +1830,7 @@ async def get_admin_job(job_id: str):
             "pages": job.pages,
             "error": sanitize_error(getattr(job, "error", None)),
             "provider_sid": job.provider_sid,
+            "schedule_at": job.schedule_at,
             "created_at": job.created_at,
             "updated_at": job.updated_at,
             "file_name": job.file_name,
@@ -2287,7 +2353,12 @@ def persist_settings(payload: PersistSettingsIn):
     return {"ok": True, "path": target}
 
 @app.post("/fax", response_model=FaxJobOut, status_code=202, dependencies=[Depends(require_fax_send)])
-async def send_fax(background: BackgroundTasks, to: str = Form(...), file: UploadFile = File(...)):
+async def send_fax(
+    background: BackgroundTasks,
+    to: str = Form(...),
+    file: UploadFile = File(...),
+    schedule_at: Optional[str] = Form(None, description="ISO-8601 UTC timestamp to schedule the fax. Omit or null to send immediately."),
+):
     ob = active_outbound()
     # Preserve legacy behavior in disabled/test mode to avoid cross-test env leakage
     if settings.fax_disabled:
@@ -2295,6 +2366,18 @@ async def send_fax(background: BackgroundTasks, to: str = Form(...), file: Uploa
     # Validate destination
     if not PHONE_RE.match(to):
         raise HTTPException(400, detail="'to' must be E.164 or digits only")
+
+    # --- Validate schedule_at ---
+    parsed_schedule_at: Optional[datetime] = None
+    if schedule_at is not None and schedule_at.strip():
+        try:
+            # Keep timezone-aware so APScheduler schedules at the correct UTC time
+            parsed_schedule_at = datetime.fromisoformat(schedule_at.replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            raise HTTPException(400, detail="schedule_at must be a valid ISO-8601 UTC timestamp")
+        if parsed_schedule_at <= datetime.now(timezone.utc):
+            raise HTTPException(400, detail="schedule_at must not be in the past")
+
     # Stream upload to disk with magic sniff and size enforcement
     max_bytes = settings.max_file_size_mb * 1024 * 1024
     job_id = uuid.uuid4().hex
@@ -2379,6 +2462,9 @@ async def send_fax(background: BackgroundTasks, to: str = Form(...), file: Uploa
     else:
         pages = None
 
+    # Determine initial status based on scheduling
+    initial_status = "scheduled" if parsed_schedule_at else "queued"
+
     # Create job in DB with backend info
     with SessionLocal() as db:
         job = FaxJob(
@@ -2386,33 +2472,71 @@ async def send_fax(background: BackgroundTasks, to: str = Form(...), file: Uploa
             to_number=to,
             file_name=file.filename,
             tiff_path=tiff_path,
-            status="queued",
+            status=initial_status,
             pages=pages,
             backend=ob,
+            schedule_at=parsed_schedule_at.replace(tzinfo=None) if parsed_schedule_at is not None else None,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
         )
         db.add(job)
         db.commit()
-    audit_event("job_created", job_id=job_id, backend=ob)
+    audit_event("job_created", job_id=job_id, backend=ob, scheduled=bool(parsed_schedule_at))
 
-    # Kick off fax sending based on backend
+    # Kick off fax sending (immediate or scheduled)
     if not settings.fax_disabled:
-        if ob == "phaxio":
-            background.add_task(_send_via_phaxio, job_id, to, pdf_path)
-        elif ob == "sinch":
-            background.add_task(_send_via_sinch, job_id, to, pdf_path)
-        elif ob == "signalwire":
-            background.add_task(_send_via_signalwire, job_id, to, pdf_path)
-        elif ob == "freeswitch":
-            background.add_task(_send_via_freeswitch, job_id, to, tiff_path)
-        elif settings.feature_v3_plugins and os.path.exists(manifest_path):
-            background.add_task(_send_via_manifest, job_id, to, pdf_path)
+        if parsed_schedule_at:
+            # Schedule the job for future execution via APScheduler
+            sched = get_scheduler()
+            sched.add_job(
+                _dispatch_fax_by_backend,
+                trigger="date",
+                run_date=parsed_schedule_at,
+                timezone="UTC",
+                args=[job_id, to, pdf_path, tiff_path, ob],
+                id=f"fax_{job_id}",
+                replace_existing=True,
+            )
         else:
-            # Default to SIP/Asterisk
-            background.add_task(_originate_job, job_id, to, tiff_path)
+            # Send immediately via background task
+            background.add_task(_dispatch_fax_by_backend, job_id, to, pdf_path, tiff_path, ob)
 
     return _serialize_job(job)
+
+
+async def _dispatch_fax_by_backend(job_id: str, to: str, pdf_path: str, tiff_path: str, ob: str):
+    """Route fax dispatch to the correct backend.
+
+    Used by both immediate sends (BackgroundTasks) and scheduled sends (APScheduler).
+    When triggered by the scheduler for a deferred job, the DB status is transitioned
+    from 'scheduled' → 'queued' before dispatching.
+    """
+    # Transition scheduled → queued
+    with SessionLocal() as db:
+        job = db.get(FaxJob, job_id)
+        if job:
+            j = cast(Any, job)
+            if j.status == "scheduled":
+                j.status = "queued"
+                j.updated_at = datetime.utcnow()
+                db.add(j)
+                db.commit()
+    audit_event("job_dispatch", job_id=job_id, backend=ob)
+
+    manifest_path = os.path.join(os.getcwd(), "config", "providers", ob, "manifest.json")
+    if ob == "phaxio":
+        await _send_via_phaxio(job_id, to, pdf_path)
+    elif ob == "sinch":
+        await _send_via_sinch(job_id, to, pdf_path)
+    elif ob == "signalwire":
+        await _send_via_signalwire(job_id, to, pdf_path)
+    elif ob == "freeswitch":
+        await _send_via_freeswitch(job_id, to, tiff_path)
+    elif settings.feature_v3_plugins and os.path.exists(manifest_path):
+        await _send_via_manifest(job_id, to, pdf_path)
+    else:
+        # Default to SIP/Asterisk
+        await _originate_job(job_id, to, tiff_path)
 
 
 async def _originate_job(job_id: str, to: str, tiff_path: str):
@@ -2920,6 +3044,7 @@ def _serialize_job(job: FaxJob) -> FaxJobOut:
         pages=j.pages,
         backend=j.backend,
         provider_sid=j.provider_sid,
+        schedule_at=getattr(j, "schedule_at", None),
         created_at=j.created_at,
         updated_at=j.updated_at,
     )

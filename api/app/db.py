@@ -28,8 +28,9 @@ class FaxJob(Base):  # type: ignore
     outbound_backend = Column(String(20), nullable=True)  # effective outbound backend (hybrid)
     provider_sid = Column(String(100), nullable=True)  # Cloud provider fax ID
     pdf_url = Column(String(512), nullable=True)  # Public URL for PDF (for cloud backend)
-    pdf_token = Column(String(128), nullable=True)  # Secure token for PDF fetch
+    pdf_token = Column(String(128), nullable=True)
     pdf_token_expires_at = Column(DateTime, nullable=True)
+    schedule_at = Column(DateTime, nullable=True)  # UTC timestamp for scheduled send; null = immediate
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -135,6 +136,8 @@ def _ensure_optional_columns() -> None:
                 if "outbound_backend" not in cols:
                     conn.exec_driver_sql("ALTER TABLE fax_jobs ADD COLUMN outbound_backend VARCHAR(20)")
                     conn.exec_driver_sql("UPDATE fax_jobs SET outbound_backend = backend WHERE outbound_backend IS NULL")
+                if "schedule_at" not in cols:
+                    conn.exec_driver_sql("ALTER TABLE fax_jobs ADD COLUMN schedule_at DATETIME")
 
                 inb_cols = set()
                 for row in conn.exec_driver_sql("PRAGMA table_info('inbound_faxes')"):
@@ -154,6 +157,10 @@ def _ensure_optional_columns() -> None:
                     pass
                 try:
                     conn.exec_driver_sql("ALTER TABLE fax_jobs ADD COLUMN IF NOT EXISTS outbound_backend VARCHAR(20)")
+                except Exception:
+                    pass
+                try:
+                    conn.exec_driver_sql("ALTER TABLE fax_jobs ADD COLUMN IF NOT EXISTS schedule_at TIMESTAMP")
                 except Exception:
                     pass
                 try:

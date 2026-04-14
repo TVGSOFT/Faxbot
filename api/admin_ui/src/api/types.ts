@@ -21,6 +21,7 @@ export interface FaxJob {
   backend: string;
   pages?: number;
   error?: string;
+  schedule_at?: string;
   created_at: string;
   updated_at: string;
   file_name?: string;

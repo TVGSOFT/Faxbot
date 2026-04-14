@@ -12,7 +12,7 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    minify: 'esbuild'
+    minify: 'oxc'
   },
   server: {
     port: 3000,
