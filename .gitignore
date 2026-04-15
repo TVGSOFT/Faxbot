@@ -64,3 +64,6 @@ vendor/
 .bundle/
 
 site/
+
+scripts/build_image.sh
+scripts/push_image.sh

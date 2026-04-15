@@ -1,4 +1,4 @@
-FROM node:18-alpine AS admin-ui-builder
+FROM node:22-alpine AS admin-ui-builder
 WORKDIR /build
 COPY api/admin_ui/package*.json ./
 RUN npm ci
