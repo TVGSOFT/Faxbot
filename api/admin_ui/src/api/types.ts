@@ -16,6 +16,7 @@ export interface HealthStatus {
 
 export interface FaxJob {
   id: string;
+  app_id?: string;
   to_number: string;
   status: string;
   backend: string;

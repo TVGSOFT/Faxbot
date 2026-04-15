@@ -1807,6 +1807,7 @@ async def list_admin_jobs(
                     "backend": r.backend,
                     "pages": r.pages,
                     "error": sanitize_error(getattr(r, "error", None)),
+                    "app_id": r.app_id,
                     "schedule_at": r.schedule_at,
                     "created_at": r.created_at,
                     "updated_at": r.updated_at,
@@ -1830,6 +1831,7 @@ async def get_admin_job(job_id: str):
             "pages": job.pages,
             "error": sanitize_error(getattr(job, "error", None)),
             "provider_sid": job.provider_sid,
+            "app_id": job.app_id,
             "schedule_at": job.schedule_at,
             "created_at": job.created_at,
             "updated_at": job.updated_at,
@@ -2352,12 +2354,14 @@ def persist_settings(payload: PersistSettingsIn):
         raise HTTPException(500, detail=f"Failed to write settings: {e}")
     return {"ok": True, "path": target}
 
+
 @app.post("/fax", response_model=FaxJobOut, status_code=202, dependencies=[Depends(require_fax_send)])
 async def send_fax(
     background: BackgroundTasks,
     to: str = Form(...),
     file: UploadFile = File(...),
     schedule_at: Optional[str] = Form(None, description="ISO-8601 UTC timestamp to schedule the fax. Omit or null to send immediately."),
+    app_id: Optional[str] = Header(None, alias="x-app-id", description="Optional app identifier passed via X-App-Id header."),
 ):
     ob = active_outbound()
     # Preserve legacy behavior in disabled/test mode to avoid cross-test env leakage
@@ -2476,12 +2480,13 @@ async def send_fax(
             pages=pages,
             backend=ob,
             schedule_at=parsed_schedule_at.replace(tzinfo=None) if parsed_schedule_at is not None else None,
+            app_id=app_id,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
         )
         db.add(job)
         db.commit()
-    audit_event("job_created", job_id=job_id, backend=ob, scheduled=bool(parsed_schedule_at))
+    audit_event("job_created", job_id=job_id, backend=ob, scheduled=bool(parsed_schedule_at), app_id=app_id)
 
     # Kick off fax sending (immediate or scheduled)
     if not settings.fax_disabled:
@@ -3045,6 +3050,7 @@ def _serialize_job(job: FaxJob) -> FaxJobOut:
         backend=j.backend,
         provider_sid=j.provider_sid,
         schedule_at=getattr(j, "schedule_at", None),
+        app_id=getattr(j, "app_id", None),
         created_at=j.created_at,
         updated_at=j.updated_at,
     )
@@ -3822,6 +3828,7 @@ async def signalwire_callback(request: Request, job_id: Optional[str] = Query(de
             payload = await request.json()
         except Exception:
             payload = {}
+
     svc = get_signalwire_service()
     if not svc:
         return {"ok": True}

@@ -31,6 +31,8 @@ def upgrade() -> None:
         sa.Column('pdf_url', sa.String(length=512), nullable=True),
         sa.Column('pdf_token', sa.String(length=128), nullable=True),
         sa.Column('pdf_token_expires_at', sa.DateTime(), nullable=True),
+        sa.Column("app_id", sa.String(100), nullable=True),
+        sa.Column('schedule_at', sa.DateTime(), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), nullable=False),
     )

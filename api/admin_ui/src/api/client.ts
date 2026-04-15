@@ -279,6 +279,7 @@ export class AdminAPIClient {
       method: 'POST',
       headers: {
         'X-API-Key': this.apiKey,
+        'x-app-id': 'portal',
       },
       body: formData,
     });

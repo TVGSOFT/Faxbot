@@ -187,6 +187,7 @@ function JobsList({ client }: JobsListProps) {
               <Table size="small">
                 <TableHead>
                   <TableRow>
+                    <TableCell sx={{ minWidth: 120 }}>App ID</TableCell>
                     <TableCell sx={{ minWidth: 120 }}>Job ID</TableCell>
                     <TableCell sx={{ minWidth: 100, display: { xs: 'none', sm: 'table-cell' } }}>To Number</TableCell>
                     <TableCell sx={{ minWidth: 80 }}>Status</TableCell>
@@ -206,6 +207,11 @@ function JobsList({ client }: JobsListProps) {
                       sx={{ cursor: 'pointer' }}
                       onClick={() => handleJobClick(job.id)}
                     >
+                      <TableCell>
+                        <Typography variant="body2" fontFamily="monospace" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
+                          {job.app_id || "Unknown"}
+                        </Typography>
+                      </TableCell>
                       <TableCell>
                         <Typography variant="body2" fontFamily="monospace" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
                           {job.id.slice(0, 8)}...
