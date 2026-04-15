@@ -67,3 +67,4 @@ site/
 
 scripts/build_image.sh
 scripts/push_image.sh
+scripts/delete_image.sh

@@ -175,7 +175,7 @@ except Exception as _mcp_http_err:
 
 
 # ===== Admin security middleware (loopback + flag) =====
-@app.middleware("http")
+# @app.middleware("http")
 async def enforce_local_admin(request: Request, call_next):
     # Restrict only the browser UI under /admin/ui; leave programmatic admin APIs accessible
     if request.url.path.startswith("/admin/ui"):

@@ -13,6 +13,7 @@ anyio==4.13.0
 reportlab==4.4.10
 aiohttp==3.13.5
 boto3==1.42.89
+psycopg==3.3.3
 psycopg-binary==3.3.3
 websockets==16.0
 pexpect==4.9.0
