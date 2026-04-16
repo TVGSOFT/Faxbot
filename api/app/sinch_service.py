@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, List
 import httpx
 import logging
 import os
@@ -82,10 +82,19 @@ class SinchFaxService:
             resp.raise_for_status()
             return resp.json()
 
-    async def send_fax_file(self, to_number: str, file_path: str) -> Dict[str, Any]:
+    async def send_fax_file(
+        self,
+        to_number: str,
+        file_path: str,
+        *,
+        callback_url: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """Create a fax by posting the file directly as multipart/form-data.
 
         This mirrors what the Sinch console does and avoids a separate /files upload.
+        Pass ``callback_url`` to have Sinch POST a status update back to your server.
+        The ``job_id`` is embedded in the callback URL as a query parameter so the
+        callback endpoint can resolve the FaxJob without relying on clientReference.
         """
         if not os.path.exists(file_path):
             raise FileNotFoundError(file_path)
@@ -97,14 +106,59 @@ class SinchFaxService:
         url = f"{self.base_url}/projects/{self.project_id}/faxes"
         async with httpx.AsyncClient(timeout=60.0) as client:
             # httpx expects a mapping of field name → (filename, fileobj, content_type)
-            # For the additional text field, pass as data not files
+            # For additional text fields, pass as data not files
             with open(file_path, "rb") as fh:
                 files = {"file": (os.path.basename(file_path), fh, "application/pdf")}
-                data = {"to": to}
+                data: Dict[str, str] = {"to": to}
+                if callback_url:
+                    data["callbackUrl"] = callback_url
                 resp = await client.post(url, files=files, data=data, auth=self._auth())
             if resp.status_code >= 400:
                 raise RuntimeError(f"Sinch create fax error {resp.status_code}: {resp.text}")
             return resp.json()
+
+    def handle_status_callback(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Parse a Sinch outbound fax status callback JSON payload.
+
+        Sinch POSTs JSON with at minimum:
+          id, status, errorCode, errorMessage, numPages, clientReference
+
+        Status mapping:
+          COMPLETED  → success
+          FAILED     → failed
+          IN_PROGRESS → in_progress
+          (anything else) → in_progress
+        """
+        sinch_status = (payload.get("status") or "").upper()
+        status_map = {
+            "COMPLETED": "success",
+            "FAILED": "failed",
+            "IN_PROGRESS": "in_progress",
+            "QUEUED": "queued",
+            "FAILURE": "failed",
+        }
+        internal_status = status_map.get(sinch_status, "in_progress")
+
+        error_code = payload.get("errorCode") or payload.get("error_code")
+        error_message = payload.get("errorMessage") or payload.get("error_message")
+        error: Optional[str] = None
+        if error_code or error_message:
+            parts: List[str] = []
+            if error_code:
+                parts.append(str(error_code))
+            if error_message:
+                parts.append(str(error_message))
+            error = " \u2014 ".join(parts) if parts else None
+
+        num_pages = payload.get("numPages") or payload.get("num_pages") or payload.get("pages")
+
+        return {
+            "provider_sid": str(payload.get("id") or ""),
+            "status": internal_status,
+            "provider_status": sinch_status,
+            "pages": int(str(num_pages)) if num_pages is not None else None,
+            "error": error,
+        }
 
 
 _sinch_service: Optional[SinchFaxService] = None

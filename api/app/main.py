@@ -4,11 +4,14 @@ import re
 import uuid
 import asyncio
 import secrets
+import logging
 from datetime import datetime, timedelta, timezone
 import tempfile
 from typing import Optional, Any, List, Dict, cast
 import subprocess
 import time
+
+logger = logging.getLogger(__name__)
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Header, Depends, Query, Request, Response, WebSocket
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -2865,8 +2868,18 @@ async def _send_via_sinch(job_id: str, to: str, pdf_path: str):
 
         audit_event("job_dispatch", job_id=job_id, method="sinch")
 
+        # Build callback URL from PUBLIC_API_URL so Sinch can POST status updates back.
+        sinch_cb_url: Optional[str] = None
+        if settings.public_api_url:
+            base_pub = settings.public_api_url.rstrip("/")
+            sinch_cb_url = f"{base_pub}/sinch-callback?job_id={job_id}"
+
         # Create fax by uploading the PDF directly (multipart/form-data)
-        resp = await sinch.send_fax_file(to, pdf_path)
+        resp = await sinch.send_fax_file(
+            to,
+            pdf_path,
+            callback_url=sinch_cb_url,
+        )
 
         fax_id = str(resp.get("id") or resp.get("data", {}).get("id") or "")
         status = (resp.get("status") or resp.get("data", {}).get("status") or "in_progress").upper()
@@ -3849,6 +3862,67 @@ async def signalwire_callback(request: Request, job_id: Optional[str] = Query(de
             db.commit()
             audit_event("job_updated", job_id=job.id, status=job.status, provider="signalwire")
     return {"ok": True}
+
+
+@app.post("/sinch-callback")
+async def sinch_callback(request: Request, job_id: Optional[str] = Query(default=None)):
+    """Sinch Fax API outbound status callback.
+
+    Sinch POSTs a JSON payload here when a fax reaches a terminal or intermediate state.
+    The ``job_id`` query param is embedded in the callback URL when the fax is created:
+    ``callbackUrl = {PUBLIC_API_URL}/sinch-callback?job_id={job_id}``
+    """
+    # --- Parse JSON body ----------------------------------------------------------
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    sinch = get_sinch_service()
+    if not sinch:
+        logger.warning("sinch-callback received but Sinch is not configured")
+        return {"ok": True}
+
+    result = sinch.handle_status_callback(payload)
+
+    if not job_id:
+        logger.info("sinch-callback: cannot resolve job; payload=%s", payload)
+        return {"ok": True}
+
+    with SessionLocal() as db:
+        job = db.get(FaxJob, str(job_id))
+        if not job:
+            logger.info("sinch-callback: job %s not found", job_id)
+            return {"ok": True}
+        j = cast(Any, job)
+        new_status = result["status"]
+        # Only move forward (avoid overwriting terminal state with in_progress)
+        terminal = {"success", "failed", "SUCCESS", "FAILED"}
+        if j.status not in terminal or new_status in terminal:
+            j.status = new_status
+        if result.get("error"):
+            j.error = result["error"]
+        elif new_status in {"success", "SUCCESS"}:
+            j.error = None          # clear any prior error on success
+        if result.get("pages") is not None:
+            j.pages = result["pages"]
+        # Persist provider_sid if not already stored
+        if result.get("provider_sid") and not j.provider_sid:
+            j.provider_sid = result["provider_sid"]
+        j.updated_at = datetime.utcnow()
+        db.add(j)
+        db.commit()
+
+    audit_event(
+        "job_updated",
+        job_id=resolved_job_id,
+        status=result["status"],
+        provider="sinch",
+        provider_status=result.get("provider_status"),
+    )
+    return {"ok": True}
+
+
 class FSOutboundResultIn(BaseModel):
     job_id: Optional[str] = None
     fax_status: Optional[str] = None
