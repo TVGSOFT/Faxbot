@@ -3872,9 +3872,14 @@ async def sinch_callback(request: Request, job_id: Optional[str] = Query(default
     The ``job_id`` query param is embedded in the callback URL when the fax is created:
     ``callbackUrl = {PUBLIC_API_URL}/sinch-callback?job_id={job_id}``
     """
-    # --- Parse JSON body ----------------------------------------------------------
+    # --- Parse multipart/form-data or JSON body -----------------------------------
+    content_type = request.headers.get("content-type", "")
     try:
-        payload = await request.json()
+        if "multipart/form-data" in content_type or "application/x-www-form-urlencoded" in content_type:
+            form = await request.form()
+            payload = dict(form)
+        else:
+            payload = await request.json()
     except Exception:
         payload = {}
 
@@ -3904,18 +3909,13 @@ async def sinch_callback(request: Request, job_id: Optional[str] = Query(default
             j.error = result["error"]
         elif new_status in {"success", "SUCCESS"}:
             j.error = None          # clear any prior error on success
-        if result.get("pages") is not None:
-            j.pages = result["pages"]
-        # Persist provider_sid if not already stored
-        if result.get("provider_sid") and not j.provider_sid:
-            j.provider_sid = result["provider_sid"]
         j.updated_at = datetime.utcnow()
         db.add(j)
         db.commit()
 
     audit_event(
         "job_updated",
-        job_id=resolved_job_id,
+        job_id=job_id,
         status=result["status"],
         provider="sinch",
         provider_status=result.get("provider_status"),
