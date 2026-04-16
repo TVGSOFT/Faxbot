@@ -112,23 +112,29 @@ class SinchFaxService:
                 data: Dict[str, str] = {"to": to}
                 if callback_url:
                     data["callbackUrl"] = callback_url
+                    data["callbackUrlContentType"] = "application/json"
                 resp = await client.post(url, files=files, data=data, auth=self._auth())
             if resp.status_code >= 400:
                 raise RuntimeError(f"Sinch create fax error {resp.status_code}: {resp.text}")
             return resp.json()
 
     def handle_status_callback(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        """Parse a Sinch outbound fax status callback JSON payload.
+        """Parse a Sinch outbound fax status callback payload.
 
-        Sinch POSTs JSON with at minimum:
-          id, status, errorCode, errorMessage, numPages, clientReference
+        Sinch POSTs either flat JSON or a nested structure:
+          { "event": "FAX_COMPLETED", "fax": { "id": ..., "status": ..., ... }, "eventTime": ... }
 
         Status mapping:
           COMPLETED  → success
-          FAILED     → failed
+          FAILURE / FAILED → failed
           IN_PROGRESS → in_progress
           (anything else) → in_progress
         """
+        # Unwrap nested payload: { "event": "...", "fax": { ... } }
+        fax_data = payload.get("fax")
+        if fax_data and isinstance(fax_data, dict):
+            payload = fax_data
+
         sinch_status = (payload.get("status") or "").upper()
         status_map = {
             "COMPLETED": "success",
@@ -140,7 +146,11 @@ class SinchFaxService:
         internal_status = status_map.get(sinch_status, "in_progress")
 
         error_code = payload.get("errorCode") or payload.get("error_code")
-        error_message = payload.get("errorMessage") or payload.get("error_message")
+        error_message = (
+            payload.get("errorMessage")
+            or payload.get("error_message")
+            or payload.get("errorType")
+        )
         error: Optional[str] = None
         if error_code or error_message:
             parts: List[str] = []
@@ -148,9 +158,14 @@ class SinchFaxService:
                 parts.append(str(error_code))
             if error_message:
                 parts.append(str(error_message))
-            error = " \u2014 ".join(parts) if parts else None
+            error = " — ".join(parts) if parts else None
 
-        num_pages = payload.get("numPages") or payload.get("num_pages") or payload.get("pages")
+        num_pages = (
+            payload.get("numberOfPages")
+            or payload.get("numPages")
+            or payload.get("num_pages")
+            or payload.get("pages")
+        )
 
         return {
             "provider_sid": str(payload.get("id") or ""),

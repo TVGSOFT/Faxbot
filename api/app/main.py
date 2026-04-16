@@ -3877,7 +3877,31 @@ async def sinch_callback(request: Request, job_id: Optional[str] = Query(default
     try:
         if "multipart/form-data" in content_type or "application/x-www-form-urlencoded" in content_type:
             form = await request.form()
-            payload = dict(form)
+            form_dict = dict(form)
+            # Sinch may send the entire payload as a single JSON-encoded form field
+            # Try to find a field that contains a JSON object
+            payload = None
+            for key in ("payload", "event", "fax"):
+                if key in form_dict:
+                    try:
+                        import json as _json
+                        val = form_dict[key]
+                        payload = _json.loads(str(val))
+                        break
+                    except Exception:
+                        pass
+            if payload is None:
+                # Try to parse any string value that looks like JSON
+                for val in form_dict.values():
+                    if isinstance(val, str) and val.strip().startswith("{"):
+                        try:
+                            import json as _json
+                            payload = _json.loads(val)
+                            break
+                        except Exception:
+                            pass
+            if payload is None:
+                payload = form_dict
         else:
             payload = await request.json()
     except Exception:
