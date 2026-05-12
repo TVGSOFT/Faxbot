@@ -32,6 +32,8 @@ class FaxJob(Base):  # type: ignore
     pdf_token_expires_at = Column(DateTime, nullable=True)
     schedule_at = Column(DateTime, nullable=True)  # UTC timestamp for scheduled send; null = immediate
     app_id = Column(String(100), nullable=True)    # Value of X-App-Id request header
+    fcm_token = Column(String(512), nullable=True)  # Firebase Cloud Messaging device token
+    language = Column(String(10), nullable=True, default="en")  # BCP-47 language code for notifications
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -141,6 +143,10 @@ def _ensure_optional_columns() -> None:
                     conn.exec_driver_sql("ALTER TABLE fax_jobs ADD COLUMN schedule_at DATETIME")
                 if "app_id" not in cols:
                     conn.exec_driver_sql("ALTER TABLE fax_jobs ADD COLUMN app_id VARCHAR(100)")
+                if "fcm_token" not in cols:
+                    conn.exec_driver_sql("ALTER TABLE fax_jobs ADD COLUMN fcm_token VARCHAR(512)")
+                if "language" not in cols:
+                    conn.exec_driver_sql("ALTER TABLE fax_jobs ADD COLUMN language VARCHAR(10) DEFAULT 'en'")
 
                 inb_cols = set()
                 for row in conn.exec_driver_sql("PRAGMA table_info('inbound_faxes')"):
@@ -168,6 +174,14 @@ def _ensure_optional_columns() -> None:
                     pass
                 try:
                     conn.exec_driver_sql("ALTER TABLE fax_jobs ADD COLUMN IF NOT EXISTS app_id VARCHAR(100)")
+                except Exception:
+                    pass
+                try:
+                    conn.exec_driver_sql("ALTER TABLE fax_jobs ADD COLUMN IF NOT EXISTS fcm_token VARCHAR(512)")
+                except Exception:
+                    pass
+                try:
+                    conn.exec_driver_sql("ALTER TABLE fax_jobs ADD COLUMN IF NOT EXISTS language VARCHAR(10) DEFAULT 'en'")
                 except Exception:
                     pass
                 try:

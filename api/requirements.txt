@@ -18,3 +18,4 @@ psycopg-binary==3.3.3
 websockets==16.0
 pexpect==4.9.0
 APScheduler==3.11.2
+firebase-admin==6.5.0

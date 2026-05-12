@@ -17,5 +17,7 @@ class FaxJobOut(BaseModel):
     provider_sid: Optional[str] = None  # Phaxio fax ID or other cloud provider ID
     schedule_at: Optional[datetime] = None  # UTC timestamp for scheduled send; null = immediate
     app_id: Optional[str] = None           # Value of X-App-Id request header
+    fcm_token: Optional[str] = None        # Firebase Cloud Messaging device token
+    language: Optional[str] = None         # BCP-47 language code for notifications
     created_at: datetime
     updated_at: datetime

@@ -43,6 +43,7 @@ from .auth import verify_db_key, create_api_key, list_api_keys, revoke_api_key, 
 from .plugins.http_provider import HttpManifest, HttpProviderRuntime
 from .signalwire_service import get_signalwire_service
 from .scheduler import init_scheduler, get_scheduler, shutdown_scheduler
+from . import fcm_service
 
 # v3 plugins (feature-gated)
 try:
@@ -2364,6 +2365,8 @@ async def send_fax(
     to: str = Form(...),
     file: UploadFile = File(...),
     schedule_at: Optional[str] = Form(None, description="ISO-8601 UTC timestamp to schedule the fax. Omit or null to send immediately."),
+    fcm_token: Optional[str] = Form(None, description="Firebase Cloud Messaging device registration token for push notifications."),
+    language: Optional[str] = Form(None, description="BCP-47 language code for notification messages (e.g. 'en', 'vi'). Defaults to 'en'."),
     app_id: Optional[str] = Header(None, alias="x-app-id", description="Optional app identifier passed via X-App-Id header."),
 ):
     ob = active_outbound()
@@ -2484,6 +2487,8 @@ async def send_fax(
             backend=ob,
             schedule_at=parsed_schedule_at.replace(tzinfo=None) if parsed_schedule_at is not None else None,
             app_id=app_id,
+            fcm_token=fcm_token,
+            language=language or "en",
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
         )
@@ -3064,6 +3069,8 @@ def _serialize_job(job: FaxJob) -> FaxJobOut:
         provider_sid=j.provider_sid,
         schedule_at=getattr(j, "schedule_at", None),
         app_id=getattr(j, "app_id", None),
+        fcm_token=getattr(j, "fcm_token", None),
+        language=getattr(j, "language", None),
         created_at=j.created_at,
         updated_at=j.updated_at,
     )
@@ -3936,6 +3943,11 @@ async def sinch_callback(request: Request, job_id: Optional[str] = Query(default
         j.updated_at = datetime.utcnow()
         db.add(j)
         db.commit()
+        # Send FCM push notification (non-blocking, never raises)
+        try:
+            await asyncio.to_thread(fcm_service.send_fax_notification, j)
+        except Exception as _fcm_exc:
+            logger.warning("FCM notification error for job %s: %s", job_id, _fcm_exc)
 
     audit_event(
         "job_updated",
