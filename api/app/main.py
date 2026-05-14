@@ -44,6 +44,14 @@ from .plugins.http_provider import HttpManifest, HttpProviderRuntime
 from .signalwire_service import get_signalwire_service
 from .scheduler import init_scheduler, get_scheduler, shutdown_scheduler
 from . import fcm_service
+import logging
+import sys
+
+logging.basicConfig(
+    stream=sys.stdout,
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
 
 # v3 plugins (feature-gated)
 try:
