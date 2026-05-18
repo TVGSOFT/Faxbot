@@ -28,7 +28,14 @@ def init_scheduler() -> AsyncIOScheduler:
         return _scheduler
 
     jobstores = {
-        "default": SQLAlchemyJobStore(url=settings.database_url),
+        "default": SQLAlchemyJobStore(
+            url=settings.database_url,
+            engine_options={
+                "pool_pre_ping": True,   # health-check before each use — key fix for Cloud Run
+                "pool_recycle": 300,     # recycle after 5 min (Cloud Run drops idle after ~10 min)
+                "pool_timeout": 30,      # fail fast instead of hanging
+            },
+        ),
     }
     _scheduler = AsyncIOScheduler(
         jobstores=jobstores,

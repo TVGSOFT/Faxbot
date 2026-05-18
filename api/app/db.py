@@ -4,7 +4,13 @@ from datetime import datetime
 from .config import settings
 
 
-engine = create_engine(settings.database_url, future=True)
+engine = create_engine(
+    settings.database_url,
+    future=True,
+    pool_pre_ping=True,   # health-check before each use — prevents stale connection errors
+    pool_recycle=300,     # recycle connections after 5 min (Cloud Run drops idle after ~10 min)
+    pool_timeout=30,      # fail fast if no connection available
+)
 SessionLocal = sessionmaker(
     bind=engine,
     autoflush=False,
@@ -109,7 +115,13 @@ def _rebind_engine_if_needed() -> None:
     target_url = settings.database_url
     current_url = str(engine.url)
     if current_url != target_url:
-        engine = create_engine(target_url, future=True)
+        engine = create_engine(
+            target_url,
+            future=True,
+            pool_pre_ping=True,
+            pool_recycle=300,
+            pool_timeout=30,
+        )
         SessionLocal.configure(bind=engine)
 
 
