@@ -109,10 +109,11 @@ class SinchFaxService:
             # For additional text fields, pass as data not files
             with open(file_path, "rb") as fh:
                 files = {"file": (os.path.basename(file_path), fh, "application/pdf")}
-                data: Dict[str, str] = {"to": to}
+                data: Dict[str, Any] = {"to": to}
                 if callback_url:
                     data["callbackUrl"] = callback_url
                     data["callbackUrlContentType"] = "application/json"
+                    data["maxRetries"] = 0
                 resp = await client.post(url, files=files, data=data, auth=self._auth())
             if resp.status_code >= 400:
                 raise RuntimeError(f"Sinch create fax error {resp.status_code}: {resp.text}")
