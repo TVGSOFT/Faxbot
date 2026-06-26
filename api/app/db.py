@@ -25,6 +25,7 @@ class FaxJob(Base):  # type: ignore
     __tablename__ = "fax_jobs"
     id = Column(String(40), primary_key=True, index=True)
     to_number = Column(String(64), index=True, nullable=False)
+    from_number = Column(String(64), nullable=True)  # Optional sender fax number (E.164)
     file_name = Column(String(255), nullable=False)
     tiff_path = Column(String(512), nullable=False)
     status = Column(String(32), index=True, nullable=False, default="queued")
@@ -159,6 +160,8 @@ def _ensure_optional_columns() -> None:
                     conn.exec_driver_sql("ALTER TABLE fax_jobs ADD COLUMN fcm_token VARCHAR(512)")
                 if "language" not in cols:
                     conn.exec_driver_sql("ALTER TABLE fax_jobs ADD COLUMN language VARCHAR(10) DEFAULT 'en'")
+                if "from_number" not in cols:
+                    conn.exec_driver_sql("ALTER TABLE fax_jobs ADD COLUMN from_number VARCHAR(64)")
 
                 inb_cols = set()
                 for row in conn.exec_driver_sql("PRAGMA table_info('inbound_faxes')"):
@@ -194,6 +197,10 @@ def _ensure_optional_columns() -> None:
                     pass
                 try:
                     conn.exec_driver_sql("ALTER TABLE fax_jobs ADD COLUMN IF NOT EXISTS language VARCHAR(10) DEFAULT 'en'")
+                except Exception:
+                    pass
+                try:
+                    conn.exec_driver_sql("ALTER TABLE fax_jobs ADD COLUMN IF NOT EXISTS from_number VARCHAR(64)")
                 except Exception:
                     pass
                 try:

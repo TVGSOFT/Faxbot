@@ -87,6 +87,7 @@ class SinchFaxService:
         to_number: str,
         file_path: str,
         *,
+        from_number: Optional[str] = None,
         callback_url: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Create a fax by posting the file directly as multipart/form-data.
@@ -110,6 +111,8 @@ class SinchFaxService:
             with open(file_path, "rb") as fh:
                 files = {"file": (os.path.basename(file_path), fh, "application/pdf")}
                 data: Dict[str, Any] = {"to": to}
+                if from_number:
+                    data["from"] = from_number
                 if callback_url:
                     data["callbackUrl"] = callback_url
                     data["callbackUrlContentType"] = "application/json"

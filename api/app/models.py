@@ -10,6 +10,7 @@ class FaxRequest(BaseModel):
 class FaxJobOut(BaseModel):
     id: str
     to: str
+    from_number: Optional[str] = None  # Optional sender fax number (E.164)
     status: str
     error: Optional[str] = None
     pages: Optional[int] = None

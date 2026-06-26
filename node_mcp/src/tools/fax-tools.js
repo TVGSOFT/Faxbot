@@ -12,6 +12,7 @@ export const faxTools = [
       type: 'object',
       properties: {
         to: { type: 'string', description: 'Fax number (e.g., +1234567890)' },
+        from: { type: 'string', description: 'Optional sender fax number in E.164 format (e.g., +1234567890)' },
         filePath: { type: 'string', description: 'Absolute or relative path to PDF or TXT file (preferred)' },
         fileUrl: { type: 'string', description: 'HTTP(S) URL to fetch the file from (PDF or TXT)' },
         fileContent: { type: 'string', description: 'Base64 encoded file content (PDF or plain text)' },
@@ -79,7 +80,7 @@ function validatePhone(to) {
 }
 
 export async function handleSendFaxTool(args) {
-  const { to, fileContent, fileName, filePath, fileUrl } = args || {};
+  const { to, from, fileContent, fileName, filePath, fileUrl } = args || {};
   let { fileType } = args || {};
   if (!to) throw new McpError(ErrorCode.InvalidParams, 'Missing required parameter: to');
   if (!validatePhone(to)) throw new McpError(ErrorCode.InvalidParams, 'Invalid recipient number format');
@@ -97,11 +98,11 @@ export async function handleSendFaxTool(args) {
     const base = path.basename(resolved);
     if (ext === 'pdf') {
       const buf = await fs.promises.readFile(resolved);
-      const result = await apiSendFax(to, buf, 'pdf', base);
+      const result = await apiSendFax(to, buf, 'pdf', base, from);
       return { content: [{ type: 'text', text: `Fax queued. Job ID: ${result.id}` }] };
     } else if (ext === 'txt') {
       const text = await fs.promises.readFile(resolved, 'utf8');
-      const result = await apiSendFax(to, text, 'txt', base);
+      const result = await apiSendFax(to, text, 'txt', base, from);
       return { content: [{ type: 'text', text: `Fax queued. Job ID: ${result.id}` }] };
     } else {
       throw new McpError(ErrorCode.InvalidParams, 'filePath must point to a PDF or TXT file');
@@ -117,7 +118,7 @@ export async function handleSendFaxTool(args) {
       const isPdf = ct.includes('pdf') || nameGuess.toLowerCase().endsWith('.pdf');
       const isTxt = ct.includes('text/plain') || nameGuess.toLowerCase().endsWith('.txt');
       if (!isPdf && !isTxt) throw new Error('Unsupported content-type for fileUrl (expect PDF or text/plain)');
-      const result = await apiSendFax(to, Buffer.from(resp.data), isPdf ? 'pdf' : 'txt', nameGuess);
+      const result = await apiSendFax(to, Buffer.from(resp.data), isPdf ? 'pdf' : 'txt', nameGuess, from);
       return { content: [{ type: 'text', text: `Fax queued. Job ID: ${result.id}` }] };
     } catch (err) {
       throw new McpError(ErrorCode.InvalidParams, `Failed to fetch fileUrl: ${(err && err.message) || 'unknown error'}`);
@@ -142,7 +143,7 @@ export async function handleSendFaxTool(args) {
     throw new McpError(ErrorCode.InvalidParams, 'File content is empty');
   }
   try {
-    const result = await apiSendFax(to, fileType === 'pdf' ? buffer : buffer.toString('utf8'), fileType, fileName);
+    const result = await apiSendFax(to, fileType === 'pdf' ? buffer : buffer.toString('utf8'), fileType, fileName, from);
     return {
       content: [
         { type: 'text', text: `Fax queued successfully! Job ID: ${result.id}` },

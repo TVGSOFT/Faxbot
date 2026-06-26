@@ -10,7 +10,7 @@ function buildHeaders(extra = {}) {
   return headers;
 }
 
-export async function sendFax(to, contentOrBuffer, type = 'txt', filename) {
+export async function sendFax(to, contentOrBuffer, type = 'txt', filename, from) {
   if (!to || typeof to !== 'string') {
     throw new Error('Missing recipient number');
   }
@@ -21,6 +21,9 @@ export async function sendFax(to, contentOrBuffer, type = 'txt', filename) {
   const normalizedTo = to.replace(/\s/g, '');
   const form = new FormData();
   form.append('to', normalizedTo);
+  if (from && typeof from === 'string') {
+    form.append('from', from.replace(/\s/g, ''));
+  }
 
   const name = filename || (type === 'pdf' ? 'document.pdf' : 'document.txt');
   const buffer = isBuffer

@@ -2372,6 +2372,7 @@ async def send_fax(
     background: BackgroundTasks,
     to: str = Form(...),
     file: UploadFile = File(...),
+    from_number: Optional[str] = Form(None, alias="from", description="Optional sender fax number in E.164 format."),
     schedule_at: Optional[str] = Form(None, description="ISO-8601 UTC timestamp to schedule the fax. Omit or null to send immediately."),
     fcm_token: Optional[str] = Form(None, description="Firebase Cloud Messaging device registration token for push notifications."),
     language: Optional[str] = Form(None, description="BCP-47 language code for notification messages (e.g. 'en', 'vi'). Defaults to 'en'."),
@@ -2488,6 +2489,7 @@ async def send_fax(
         job = FaxJob(
             id=job_id,
             to_number=to,
+            from_number=from_number,
             file_name=file.filename,
             tiff_path=tiff_path,
             status=initial_status,
@@ -2881,6 +2883,12 @@ async def _send_via_sinch(job_id: str, to: str, pdf_path: str):
 
         audit_event("job_dispatch", job_id=job_id, method="sinch")
 
+        # Load optional sender number stored on the job (scheduler/background
+        # dispatcher only passes job_id/to/pdf_path, so read it from the DB).
+        with SessionLocal() as db:
+            job = db.get(FaxJob, job_id)
+            from_number = getattr(job, "from_number", None) if job else None
+
         # Build callback URL from PUBLIC_API_URL so Sinch can POST status updates back.
         sinch_cb_url: Optional[str] = None
         if settings.public_api_url:
@@ -2891,6 +2899,7 @@ async def _send_via_sinch(job_id: str, to: str, pdf_path: str):
         resp = await sinch.send_fax_file(
             to,
             pdf_path,
+            from_number=from_number,
             callback_url=sinch_cb_url,
         )
 
@@ -3070,6 +3079,7 @@ def _serialize_job(job: FaxJob) -> FaxJobOut:
     return FaxJobOut(
         id=j.id,
         to=j.to_number,
+        from_number=getattr(j, "from_number", None),
         status=j.status,
         error=j.error,
         pages=j.pages,
