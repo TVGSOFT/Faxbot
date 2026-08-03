@@ -68,6 +68,14 @@ export interface Settings {
     api_secret: string;
     configured: boolean;
   };
+  telnyx?: {
+    api_key: string;
+    connection_id: string;
+    from_number?: string;
+    public_key_configured?: boolean;
+    verify_signature?: boolean;
+    configured: boolean;
+  };
   signalwire?: {
     space_url: string;
     project_id: string;
@@ -125,6 +133,10 @@ export interface Settings {
       verify_signature: boolean;
       basic_auth_configured: boolean;
       hmac_configured: boolean;
+    };
+    telnyx?: {
+      verify_signature: boolean;
+      public_key_configured: boolean;
     };
   };
   features?: {

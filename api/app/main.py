@@ -30,6 +30,12 @@ from .conversion import ensure_dir, txt_to_pdf, pdf_to_tiff
 from .ami import ami_client
 from .phaxio_service import get_phaxio_service
 from .sinch_service import get_sinch_service
+from .telnyx_service import (
+    get_telnyx_service,
+    extract_event_type as telnyx_event_type,
+    extract_event_payload as telnyx_event_payload,
+    job_id_from_client_state as telnyx_job_id_from_client_state,
+)
 from .freeswitch_service import originate_txfax, fs_cli_available
 import hmac
 import hashlib
@@ -649,6 +655,7 @@ def get_admin_config():
         "backend_configured": {
             "phaxio": bool(settings.phaxio_api_key and settings.phaxio_api_secret),
             "sinch": bool(settings.sinch_project_id and settings.sinch_api_key and settings.sinch_api_secret),
+            "telnyx": bool(settings.telnyx_api_key and settings.telnyx_connection_id),
             "signalwire": bool(settings.signalwire_space_url and settings.signalwire_project_id and settings.signalwire_api_token),
             "documo": bool(settings.documo_api_key),
             "sip_ami_configured": bool(settings.ami_username and settings.ami_password),
@@ -701,6 +708,14 @@ def get_admin_settings():
             "api_key": mask_secret(settings.sinch_api_key),
             "api_secret": mask_secret(settings.sinch_api_secret),
             "configured": bool(settings.sinch_project_id and settings.sinch_api_key and settings.sinch_api_secret),
+        },
+        "telnyx": {
+            "api_key": mask_secret(settings.telnyx_api_key),
+            "connection_id": settings.telnyx_connection_id,
+            "from_number": mask_phone(settings.telnyx_from_e164),
+            "public_key_configured": bool(settings.telnyx_public_key),
+            "verify_signature": settings.telnyx_verify_signature,
+            "configured": bool(settings.telnyx_api_key and settings.telnyx_connection_id),
         },
         "signalwire": {
             "space_url": settings.signalwire_space_url,
@@ -757,6 +772,10 @@ def get_admin_settings():
                 "basic_auth_configured": bool(settings.sinch_inbound_basic_user),
                 "hmac_configured": bool(settings.sinch_inbound_hmac_secret),
             },
+            "telnyx": {
+                "verify_signature": settings.telnyx_inbound_verify_signature,
+                "public_key_configured": bool(settings.telnyx_public_key),
+            },
         },
         "limits": {
             "max_file_size_mb": settings.max_file_size_mb,
@@ -775,6 +794,8 @@ class ValidateSettingsRequest(BaseModel):
     sinch_project_id: Optional[str] = None
     sinch_api_key: Optional[str] = None
     sinch_api_secret: Optional[str] = None
+    telnyx_api_key: Optional[str] = None
+    telnyx_connection_id: Optional[str] = None
     ami_host: Optional[str] = None
     ami_port: Optional[int] = None
     ami_username: Optional[str] = None
@@ -808,6 +829,36 @@ async def validate_settings(payload: ValidateSettingsRequest):
         results["checks"]["auth"] = bool(
             payload.sinch_project_id and payload.sinch_api_key and payload.sinch_api_secret
         )
+    elif payload.backend == "telnyx":
+        api_key = payload.telnyx_api_key or settings.telnyx_api_key
+        connection_id = payload.telnyx_connection_id or settings.telnyx_connection_id
+        if api_key and connection_id:
+            try:
+                import httpx
+                base = (os.getenv("TELNYX_BASE_URL") or "https://api.telnyx.com/v2").rstrip("/")
+                async with httpx.AsyncClient(timeout=15.0) as client:
+                    resp = await client.get(
+                        f"{base}/fax_applications/{connection_id}",
+                        headers={"Authorization": f"Bearer {api_key}", "Accept": "application/json"},
+                    )
+                results["checks"]["auth"] = (resp.status_code == 200)
+                results["checks"]["connection_found"] = (resp.status_code == 200)
+                if resp.status_code == 401 or resp.status_code == 403:
+                    results["checks"]["error"] = "Telnyx rejected the API key"
+                elif resp.status_code == 404:
+                    results["checks"]["error"] = "Fax application (connection id) not found"
+            except Exception as e:
+                # Fall back to presence-only so a network failure isn't reported
+                # as a credential failure.
+                results["checks"]["auth"] = True
+                results["checks"]["reachable"] = False
+                results["checks"]["error"] = str(e)
+        else:
+            results["checks"]["auth"] = False
+        results["checks"]["from_number"] = bool(settings.telnyx_from_e164)
+        if settings.telnyx_verify_signature and not settings.telnyx_public_key:
+            results["checks"]["webhook_verification"] = False
+            results["checks"]["warning"] = "TELNYX_VERIFY_SIGNATURE is on but TELNYX_PUBLIC_KEY is not set"
     elif payload.backend == "sip":
         if all([payload.ami_host, payload.ami_username, payload.ami_password]):
             try:
@@ -873,6 +924,14 @@ class UpdateSettingsRequest(BaseModel):
     sinch_api_key: Optional[str] = None
     sinch_api_secret: Optional[str] = None
 
+    # Telnyx
+    telnyx_api_key: Optional[str] = None
+    telnyx_connection_id: Optional[str] = None
+    telnyx_from_e164: Optional[str] = None
+    telnyx_public_key: Optional[str] = None
+    telnyx_verify_signature: Optional[bool] = None
+    telnyx_webhook_tolerance_seconds: Optional[int] = None
+
     # SignalWire
     signalwire_space_url: Optional[str] = None
     signalwire_project_id: Optional[str] = None
@@ -901,6 +960,7 @@ class UpdateSettingsRequest(BaseModel):
     sinch_inbound_basic_user: Optional[str] = None
     sinch_inbound_basic_pass: Optional[str] = None
     sinch_inbound_hmac_secret: Optional[str] = None
+    telnyx_inbound_verify_signature: Optional[bool] = None
 
     # Audit / rate limiting
     audit_log_enabled: Optional[bool] = None
@@ -974,6 +1034,14 @@ def update_admin_settings(payload: UpdateSettingsRequest):
     _set_env_opt("SINCH_API_KEY", payload.sinch_api_key)
     _set_env_opt("SINCH_API_SECRET", payload.sinch_api_secret)
 
+    # Telnyx
+    _set_env_opt("TELNYX_API_KEY", payload.telnyx_api_key)
+    _set_env_opt("TELNYX_CONNECTION_ID", payload.telnyx_connection_id)
+    _set_env_opt("TELNYX_FROM_E164", payload.telnyx_from_e164)
+    _set_env_opt("TELNYX_PUBLIC_KEY", payload.telnyx_public_key)
+    _set_env_bool("TELNYX_VERIFY_SIGNATURE", payload.telnyx_verify_signature)
+    _set_env_opt("TELNYX_WEBHOOK_TOLERANCE_SECONDS", payload.telnyx_webhook_tolerance_seconds)
+
     # SignalWire
     _set_env_opt("SIGNALWIRE_SPACE_URL", payload.signalwire_space_url)
     _set_env_opt("SIGNALWIRE_PROJECT_ID", payload.signalwire_project_id)
@@ -1002,6 +1070,7 @@ def update_admin_settings(payload: UpdateSettingsRequest):
     _set_env_opt("SINCH_INBOUND_BASIC_USER", payload.sinch_inbound_basic_user)
     _set_env_opt("SINCH_INBOUND_BASIC_PASS", payload.sinch_inbound_basic_pass)
     _set_env_opt("SINCH_INBOUND_HMAC_SECRET", payload.sinch_inbound_hmac_secret)
+    _set_env_bool("TELNYX_INBOUND_VERIFY_SIGNATURE", payload.telnyx_inbound_verify_signature)
 
     # Audit / rate limiting
     _set_env_bool("AUDIT_LOG_ENABLED", payload.audit_log_enabled)
@@ -1112,6 +1181,8 @@ async def get_health_status():
         backend_ok = bool(settings.phaxio_api_key and settings.phaxio_api_secret)
     elif backend == "sinch":
         backend_ok = bool(settings.sinch_project_id and settings.sinch_api_key and settings.sinch_api_secret)
+    elif backend == "telnyx":
+        backend_ok = bool(settings.telnyx_api_key and settings.telnyx_connection_id)
     # backend_ok remains True for sip; AMI connectivity is handled asynchronously
     backend_healthy = bool(db_ok and gs_ok and backend_ok)
     return {
@@ -1711,6 +1782,23 @@ def admin_inbound_callbacks():
             },
             "notes": "Set webhook in Sinch Fax console. Optionally use Basic and/or HMAC.",
         })
+    elif backend == "telnyx":
+        out["callbacks"].append({
+            "name": "Telnyx Fax Webhook",
+            "url": f"{base}/telnyx-inbound",
+            "alias_url": f"{base}/telnyx-callback",
+            "auth": {
+                "ed25519": settings.telnyx_verify_signature,
+                "public_key_configured": bool(settings.telnyx_public_key),
+            },
+            "notes": (
+                "Set webhook_event_url on your Telnyx Programmable Fax Application. "
+                "A Fax Application uses one URL for both inbound and outbound events, so "
+                "either path works — both accept every fax event type. "
+                "Signatures are Ed25519 (telnyx-signature-ed25519 + telnyx-timestamp); "
+                "set TELNYX_PUBLIC_KEY from the Telnyx portal."
+            ),
+        })
     elif backend == "signalwire":
         out["callbacks"].append({
             "name": "SignalWire Fax Status",
@@ -1814,11 +1902,11 @@ async def list_admin_jobs(
             "jobs": [
                 {
                     "id": r.id,
-                    "to_number": mask_phone(getattr(r, "to_number", None)),
+                    "to_number": getattr(r, "to_number", None),
                     "status": r.status,
                     "backend": r.backend,
                     "pages": r.pages,
-                    "error": sanitize_error(getattr(r, "error", None)),
+                    "error": getattr(r, "error", None),
                     "app_id": r.app_id,
                     "schedule_at": r.schedule_at,
                     "created_at": r.created_at,
@@ -1837,11 +1925,11 @@ async def get_admin_job(job_id: str):
             raise HTTPException(404, detail="Job not found")
         return {
             "id": job.id,
-            "to_number": mask_phone(getattr(job, "to_number", None)),
+            "to_number": getattr(job, "to_number", None),
             "status": job.status,
             "backend": job.backend,
             "pages": job.pages,
-            "error": sanitize_error(getattr(job, "error", None)),
+            "error": getattr(job, "error", None),
             "provider_sid": job.provider_sid,
             "app_id": job.app_id,
             "schedule_at": job.schedule_at,
@@ -2237,6 +2325,18 @@ def export_settings_env():
         lines.append(
             f"SINCH_API_SECRET={(settings.sinch_api_secret[:8] + '…') if settings.sinch_api_secret else ''}"
         )
+    elif settings.fax_backend == "telnyx":
+        lines.append("# Telnyx configuration")
+        lines.append(
+            f"TELNYX_API_KEY={(settings.telnyx_api_key[:8] + '…') if settings.telnyx_api_key else ''}"
+        )
+        lines.append(f"TELNYX_CONNECTION_ID={settings.telnyx_connection_id}")
+        lines.append(f"TELNYX_FROM_E164={settings.telnyx_from_e164}")
+        lines.append(
+            f"TELNYX_PUBLIC_KEY={'***REDACTED***' if settings.telnyx_public_key else ''}"
+        )
+        lines.append(f"TELNYX_VERIFY_SIGNATURE={str(settings.telnyx_verify_signature).lower()}")
+        lines.append(f"PUBLIC_API_URL={settings.public_api_url}")
     return {
         "env_content": "\n".join(lines),
         "requires_restart": True,
@@ -2280,6 +2380,16 @@ def _export_settings_full_env() -> str:
         kv["SINCH_PROJECT_ID"] = settings.sinch_project_id or ""
         kv["SINCH_API_KEY"] = settings.sinch_api_key or ""
         kv["SINCH_API_SECRET"] = settings.sinch_api_secret or ""
+    # Backend: Telnyx
+    if settings.fax_backend == "telnyx":
+        kv["TELNYX_API_KEY"] = settings.telnyx_api_key or ""
+        kv["TELNYX_CONNECTION_ID"] = settings.telnyx_connection_id or ""
+        if settings.telnyx_from_e164:
+            kv["TELNYX_FROM_E164"] = settings.telnyx_from_e164
+        if settings.telnyx_public_key:
+            kv["TELNYX_PUBLIC_KEY"] = settings.telnyx_public_key
+        kv["TELNYX_VERIFY_SIGNATURE"] = "true" if settings.telnyx_verify_signature else "false"
+        kv["TELNYX_WEBHOOK_TOLERANCE_SECONDS"] = str(settings.telnyx_webhook_tolerance_seconds)
     # Backend: SIP/Asterisk
     if settings.fax_backend == "sip":
         kv["ASTERISK_AMI_HOST"] = settings.ami_host
@@ -2301,6 +2411,7 @@ def _export_settings_full_env() -> str:
         kv["SINCH_INBOUND_BASIC_PASS"] = settings.sinch_inbound_basic_pass or ""
     if settings.sinch_inbound_hmac_secret:
         kv["SINCH_INBOUND_HMAC_SECRET"] = settings.sinch_inbound_hmac_secret
+    kv["TELNYX_INBOUND_VERIFY_SIGNATURE"] = "true" if settings.telnyx_inbound_verify_signature else "false"
     kv["INBOUND_LIST_RPM"] = str(settings.inbound_list_rpm)
     kv["INBOUND_GET_RPM"] = str(settings.inbound_get_rpm)
     # Storage
@@ -2551,6 +2662,8 @@ async def _dispatch_fax_by_backend(job_id: str, to: str, pdf_path: str, tiff_pat
         await _send_via_phaxio(job_id, to, pdf_path)
     elif ob == "sinch":
         await _send_via_sinch(job_id, to, pdf_path)
+    elif ob == "telnyx":
+        await _send_via_telnyx(job_id, to, pdf_path)
     elif ob == "signalwire":
         await _send_via_signalwire(job_id, to, pdf_path)
     elif ob == "freeswitch":
@@ -2920,6 +3033,70 @@ async def _send_via_sinch(job_id: str, to: str, pdf_path: str):
                 j = cast(Any, job)
                 j.provider_sid = fax_id
                 j.status = internal_status
+                j.updated_at = datetime.utcnow()
+                db.add(j)
+                db.commit()
+    except Exception as e:
+        with SessionLocal() as db:
+            job = db.get(FaxJob, job_id)
+            if job:
+                j = cast(Any, job)
+                j.status = "failed"
+                j.error = str(e)
+                j.updated_at = datetime.utcnow()
+                db.add(j)
+                db.commit()
+        audit_event("job_failed", job_id=job_id, error=str(e))
+
+
+async def _send_via_telnyx(job_id: str, to: str, pdf_path: str):
+    """Send fax via Telnyx Programmable Fax v2 (tokenized media_url pull flow)."""
+    try:
+        telnyx = get_telnyx_service()
+        if not telnyx or not telnyx.is_configured():
+            raise Exception("Telnyx is not properly configured")
+
+        # Tokenized, publicly fetchable PDF URL for Telnyx to pull.
+        pdf_token = secrets.token_urlsafe(32)
+        ttl = max(1, int(settings.pdf_token_ttl_minutes))
+        expires_at = datetime.utcnow() + timedelta(minutes=ttl)
+        base_pub = (settings.public_api_url or "").rstrip("/")
+        media_url = f"{base_pub}/fax/{job_id}/pdf?token={pdf_token}"
+
+        # Load optional sender number stored on the job (the scheduler/background
+        # dispatcher only passes job_id/to/pdf_path, so read it from the DB).
+        with SessionLocal() as db:
+            job = db.get(FaxJob, job_id)
+            from_number = getattr(job, "from_number", None) if job else None
+            if job:
+                j = cast(Any, job)
+                j.pdf_url = media_url
+                j.pdf_token = pdf_token
+                j.pdf_token_expires_at = expires_at
+                j.status = "in_progress"
+                j.updated_at = datetime.utcnow()
+                db.add(j)
+                db.commit()
+
+        # Telnyx POSTs webhook events back here; job_id rides in the query string
+        # (client_state carries a base64 copy as a fallback).
+        webhook_url = f"{base_pub}/telnyx-callback?job_id={job_id}" if base_pub else None
+
+        audit_event("job_dispatch", job_id=job_id, method="telnyx")
+        result = await telnyx.send_fax(
+            to,
+            media_url,
+            job_id=job_id,
+            from_number=from_number,
+            webhook_url=webhook_url,
+        )
+
+        with SessionLocal() as db:
+            job = db.get(FaxJob, job_id)
+            if job:
+                j = cast(Any, job)
+                j.provider_sid = result["provider_sid"]
+                j.status = result["status"]
                 j.updated_at = datetime.utcnow()
                 db.add(j)
                 db.commit()
@@ -3975,6 +4152,223 @@ async def sinch_callback(request: Request, job_id: Optional[str] = Query(default
         provider_status=result.get("provider_status"),
     )
     return {"ok": True}
+
+
+def _verify_telnyx_webhook(request: Request, raw: bytes, *, required: bool) -> None:
+    """Verify a Telnyx Ed25519 webhook signature, or raise 401.
+
+    Fails closed: when verification is required but no public key is configured
+    the request is rejected rather than silently trusted.
+    """
+    if not required:
+        return
+    telnyx = get_telnyx_service()
+    if not settings.telnyx_public_key:
+        audit_event("webhook_rejected", provider="telnyx", reason="public_key_not_configured")
+        raise HTTPException(401, detail="Telnyx webhook verification enabled but TELNYX_PUBLIC_KEY is not set")
+    if telnyx is None:
+        audit_event("webhook_rejected", provider="telnyx", reason="not_configured")
+        raise HTTPException(401, detail="Telnyx is not configured")
+    ok = telnyx.verify_signature(
+        raw,
+        request.headers.get("telnyx-signature-ed25519"),
+        request.headers.get("telnyx-timestamp"),
+        public_key_b64=settings.telnyx_public_key,
+        tolerance_seconds=int(settings.telnyx_webhook_tolerance_seconds or 0),
+    )
+    if not ok:
+        audit_event("webhook_rejected", provider="telnyx", reason="invalid_signature")
+        raise HTTPException(401, detail="Invalid signature")
+
+
+async def _handle_telnyx_event(request: Request, job_id: Optional[str]):
+    """Handle any Telnyx fax webhook event.
+
+    A Telnyx Programmable Fax Application has a single webhook URL for both
+    directions, so this dispatches on ``event_type``: ``fax.received`` goes to
+    the inbound path, everything else updates the originating FaxJob.
+    """
+    raw = await request.body()
+
+    try:
+        body = json.loads(raw.decode("utf-8")) if raw else {}
+    except Exception:
+        body = {}
+    if not isinstance(body, dict):
+        body = {}
+
+    # Read the event type only to pick the verification policy; nothing is acted
+    # on until the signature over `raw` has been checked below. Telnyx signs both
+    # directions with the same key, so TELNYX_VERIFY_SIGNATURE covers everything
+    # and TELNYX_INBOUND_VERIFY_SIGNATURE can only add strictness for inbound —
+    # a forged event_type can never downgrade verification.
+    event_type = telnyx_event_type(body)
+    inbound = event_type == "fax.received"
+    required = settings.telnyx_verify_signature or (
+        inbound and settings.telnyx_inbound_verify_signature
+    )
+    _verify_telnyx_webhook(request, raw, required=required)
+
+    if inbound:
+        return await _handle_telnyx_inbound(body)
+    return await _handle_telnyx_status(body, job_id)
+
+
+async def _handle_telnyx_status(body: Dict[str, Any], job_id: Optional[str]):
+    """Apply a Telnyx outbound status event to its FaxJob."""
+    telnyx = get_telnyx_service()
+    if not telnyx:
+        logger.warning("telnyx-callback received but Telnyx is not configured")
+        return {"ok": True}
+
+    result = telnyx.handle_status_callback(body)
+
+    # Prefer the job_id query param; fall back to the base64 client_state we set
+    # when the fax was created.
+    resolved = job_id or telnyx_job_id_from_client_state(
+        telnyx_event_payload(body).get("client_state")
+    )
+    if not resolved:
+        logger.info("telnyx-callback: cannot resolve job; event=%s", telnyx_event_type(body))
+        return {"ok": True}
+
+    with SessionLocal() as db:
+        job = db.get(FaxJob, str(resolved))
+        if not job:
+            logger.info("telnyx-callback: job %s not found", resolved)
+            return {"ok": True}
+        j = cast(Any, job)
+        new_status = result["status"]
+        # Only move forward (avoid overwriting terminal state with in_progress)
+        terminal = {"success", "failed", "SUCCESS", "FAILED"}
+        if j.status not in terminal or new_status in terminal:
+            j.status = new_status
+        if result.get("pages"):
+            j.pages = result["pages"]
+        if result.get("error"):
+            j.error = result["error"]
+        elif new_status in {"success", "SUCCESS"}:
+            j.error = None          # clear any prior error on success
+        j.updated_at = datetime.utcnow()
+        db.add(j)
+        db.commit()
+        # Send FCM push notification (non-blocking, never raises)
+        try:
+            await asyncio.to_thread(fcm_service.send_fax_notification, j)
+        except Exception as _fcm_exc:
+            logger.warning("FCM notification error for job %s: %s", resolved, _fcm_exc)
+
+    audit_event(
+        "job_updated",
+        job_id=resolved,
+        status=result["status"],
+        provider="telnyx",
+        provider_status=result.get("provider_status"),
+    )
+    return {"ok": True}
+
+
+async def _handle_telnyx_inbound(body: Dict[str, Any]):
+    """Persist an inbound fax delivered by a Telnyx ``fax.received`` event."""
+    if not settings.inbound_enabled:
+        raise HTTPException(404, detail="Inbound not enabled")
+    if os.getenv("FAX_INBOUND_BACKEND") and active_inbound() != "telnyx":
+        audit_event("inbound_route_blocked", route="/telnyx-inbound", active_inbound=active_inbound(), inbound_enabled=settings.inbound_enabled)
+        raise HTTPException(404, detail="Inbound route not active for current backend")
+
+    payload = telnyx_event_payload(body)
+    provider_sid = payload.get("fax_id") or payload.get("id")
+    from_number = payload.get("from")
+    to_number = payload.get("to")
+    pages = payload.get("page_count") or payload.get("pages")
+    status = payload.get("status") or "received"
+    media_url = payload.get("media_url")
+
+    if not provider_sid:
+        return {"status": "ignored"}
+
+    with SessionLocal() as db:
+        from .db import InboundEvent  # type: ignore
+        evt = InboundEvent(id=uuid.uuid4().hex, provider_sid=str(provider_sid), event_type="telnyx-inbound", created_at=datetime.utcnow())
+        try:
+            db.add(evt)
+            db.commit()
+        except Exception:
+            db.rollback()
+            return {"status": "ok"}
+
+    pdf_bytes: Optional[bytes] = None
+    if media_url:
+        telnyx = get_telnyx_service()
+        if telnyx:
+            pdf_bytes = await telnyx.fetch_media(str(media_url))
+        else:
+            logger.warning("telnyx-inbound: cannot fetch media, Telnyx not configured")
+
+    job_id = uuid.uuid4().hex
+    data_dir = settings.fax_data_dir
+    ensure_dir(data_dir)
+    local_pdf = os.path.join(data_dir, f"{job_id}.pdf")
+    if pdf_bytes is None:
+        pdf_bytes = b"%PDF-1.4\n% placeholder inbound\n%%EOF"
+    with open(local_pdf, "wb") as f:
+        f.write(pdf_bytes)
+    size_bytes = len(pdf_bytes)
+    sha256_hex = hashlib.sha256(pdf_bytes).hexdigest()
+
+    storage = get_storage()
+    stored_uri = storage.put_pdf(local_pdf, f"{job_id}.pdf")
+
+    pdf_token = secrets.token_urlsafe(32)
+    expires_at = datetime.utcnow() + timedelta(minutes=max(1, settings.inbound_token_ttl_minutes))
+    retention_until = datetime.utcnow() + timedelta(days=settings.inbound_retention_days) if settings.inbound_retention_days > 0 else None
+
+    with SessionLocal() as db:
+        from .db import InboundFax  # type: ignore
+        fx = InboundFax(
+            id=job_id,
+            from_number=(str(from_number) if from_number else None),
+            to_number=(str(to_number) if to_number else None),
+            status=str(status),
+            backend="telnyx",
+            inbound_backend=active_inbound(),
+            provider_sid=str(provider_sid),
+            pages=int(pages) if pages else None,
+            size_bytes=size_bytes,
+            sha256=sha256_hex,
+            pdf_path=stored_uri,
+            tiff_path=None,
+            mailbox_label=None,
+            retention_until=retention_until,
+            pdf_token=pdf_token,
+            pdf_token_expires_at=expires_at,
+            created_at=datetime.utcnow(),
+            received_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
+        )
+        db.add(fx)
+        db.commit()
+    audit_event("inbound_received", job_id=job_id, backend="telnyx")
+    return {"status": "ok"}
+
+
+@app.post("/telnyx-callback")
+async def telnyx_callback(request: Request, job_id: Optional[str] = Query(default=None)):
+    """Telnyx Programmable Fax webhook (outbound status and inbound events).
+
+    Telnyx Fax Applications expose a single ``webhook_event_url``, so this
+    endpoint accepts every fax event type. The ``job_id`` query param is
+    embedded when the fax is created:
+    ``webhook_url = {PUBLIC_API_URL}/telnyx-callback?job_id={job_id}``
+    """
+    return await _handle_telnyx_event(request, job_id)
+
+
+@app.post("/telnyx-inbound")
+async def telnyx_inbound(request: Request, job_id: Optional[str] = Query(default=None)):
+    """Alias of /telnyx-callback for deployments that configure a separate
+    inbound webhook URL in the Telnyx portal."""
+    return await _handle_telnyx_event(request, job_id)
 
 
 class FSOutboundResultIn(BaseModel):

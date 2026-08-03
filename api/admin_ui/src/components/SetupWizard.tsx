@@ -38,6 +38,11 @@ interface WizardConfig {
   sinch_project_id?: string;
   sinch_api_key?: string;
   sinch_api_secret?: string;
+  telnyx_api_key?: string;
+  telnyx_connection_id?: string;
+  telnyx_from_e164?: string;
+  telnyx_public_key?: string;
+  telnyx_verify_signature?: boolean;
   documo_api_key?: string;
   documo_use_sandbox?: boolean;
   ami_host?: string;
@@ -153,6 +158,18 @@ function SetupWizard({ client, onDone, docsBase }: SetupWizardProps) {
       lines.push(`SINCH_PROJECT_ID=${config.sinch_project_id || 'your_project_id_here'}`);
       lines.push(`SINCH_API_KEY=${config.sinch_api_key || 'your_api_key_here'}`);
       lines.push(`SINCH_API_SECRET=${config.sinch_api_secret || 'your_api_secret_here'}`);
+    } else if (ob === 'telnyx') {
+      lines.push('# Telnyx Programmable Fax Configuration');
+      lines.push(`TELNYX_API_KEY=${config.telnyx_api_key || 'your_api_key_here'}`);
+      lines.push(`TELNYX_CONNECTION_ID=${config.telnyx_connection_id || 'your_fax_application_id'}`);
+      lines.push(`TELNYX_FROM_E164=${config.telnyx_from_e164 || '+15551234567'}`);
+      lines.push(`TELNYX_PUBLIC_KEY=${config.telnyx_public_key || ''}`);
+      lines.push(`TELNYX_VERIFY_SIGNATURE=${config.telnyx_verify_signature === false ? 'false' : 'true'}`);
+      if (config.public_api_url) {
+        lines.push(`PUBLIC_API_URL=${config.public_api_url}`);
+        lines.push(`# Set as webhook_event_url on your Telnyx Fax Application:`);
+        lines.push(`# ${config.public_api_url}/telnyx-callback`);
+      }
     } else if (ob === 'signalwire') {
       lines.push('# SignalWire Compatibility Fax API');
       lines.push(`SIGNALWIRE_SPACE_URL=${(config as any).signalwire_space_url || 'example.signalwire.com'}`);
@@ -214,6 +231,13 @@ function SetupWizard({ client, onDone, docsBase }: SetupWizardProps) {
         payload.sinch_project_id = config.sinch_project_id;
         payload.sinch_api_key = config.sinch_api_key;
         payload.sinch_api_secret = config.sinch_api_secret;
+      } else if (ob === 'telnyx') {
+        payload.telnyx_api_key = config.telnyx_api_key;
+        payload.telnyx_connection_id = config.telnyx_connection_id;
+        payload.telnyx_from_e164 = config.telnyx_from_e164;
+        payload.telnyx_public_key = config.telnyx_public_key;
+        payload.telnyx_verify_signature = config.telnyx_verify_signature !== false;
+        if (config.public_api_url) payload.public_api_url = config.public_api_url;
       } else if (ob === 'signalwire') {
         (payload as any).signalwire_space_url = (config as any).signalwire_space_url;
         (payload as any).signalwire_project_id = (config as any).signalwire_project_id;
@@ -275,6 +299,7 @@ function SetupWizard({ client, onDone, docsBase }: SetupWizardProps) {
               <Select value={config.outbound_backend || config.backend} onChange={(e)=> handleConfigChange('outbound_backend', e.target.value)} label="Outbound Provider">
                 <MenuItem value="phaxio">Phaxio (Cloud - Recommended)</MenuItem>
                 <MenuItem value="sinch">Sinch Fax API v3 (Cloud)</MenuItem>
+                <MenuItem value="telnyx">Telnyx Programmable Fax (Cloud)</MenuItem>
                 <MenuItem value="signalwire">SignalWire (Compatibility API)</MenuItem>
                 <MenuItem value="documo">Documo (mFax)</MenuItem>
                 <MenuItem value="sip">SIP/Asterisk (Self-hosted)</MenuItem>
@@ -288,6 +313,7 @@ function SetupWizard({ client, onDone, docsBase }: SetupWizardProps) {
                 <MenuItem value="">Same as outbound (recommended)</MenuItem>
                 <MenuItem value="phaxio">Phaxio (Webhook)</MenuItem>
                 <MenuItem value="sinch">Sinch (Webhook)</MenuItem>
+                <MenuItem value="telnyx">Telnyx (Webhook)</MenuItem>
                 <MenuItem value="sip">SIP/Asterisk (Internal)</MenuItem>
               </Select>
             </FormControl>
@@ -303,6 +329,12 @@ function SetupWizard({ client, onDone, docsBase }: SetupWizardProps) {
                 Requires technical expertise: T.38 support, port forwarding, NAT configuration
               </Alert>
             )}
+            {ob === 'telnyx' && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                Telnyx fetches each PDF from a tokenized URL, so <code>PUBLIC_API_URL</code> must be publicly
+                reachable over HTTPS. You will need a Programmable Fax Application id (connection id).
+              </Alert>
+            )}
             {ob === 'freeswitch' && (
               <Alert severity="warning" sx={{ mt: 2 }}>
                 Requires FreeSWITCH with mod_spandsp and gateway; configure result hook to post back status
@@ -316,6 +348,13 @@ function SetupWizard({ client, onDone, docsBase }: SetupWizardProps) {
             {(config.inbound_backend||config.backend) === 'sinch' && (
               <Alert severity="info" sx={{ mt: 2 }}>
                 Inbound webhook will be <code>/sinch-inbound</code>. Basic and/or HMAC optional.
+              </Alert>
+            )}
+            {(config.inbound_backend||config.backend) === 'telnyx' && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                Inbound webhook will be <code>/telnyx-inbound</code> (<code>/telnyx-callback</code> accepts the
+                same events, so one Fax Application URL covers both directions). Ed25519 signature
+                verification is on by default and needs <code>TELNYX_PUBLIC_KEY</code>.
               </Alert>
             )}
             {(config.inbound_backend||config.backend) === 'sip' && (
@@ -405,6 +444,63 @@ function SetupWizard({ client, onDone, docsBase }: SetupWizardProps) {
                     onChange={(value) => handleConfigChange('sinch_api_secret', value)}
                     fullWidth
                   />
+                </Grid>
+              </Grid>
+            )}
+
+            {ob === 'telnyx' && (
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <SecretInput
+                    label="API Key"
+                    value={config.telnyx_api_key || ''}
+                    onChange={(value) => handleConfigChange('telnyx_api_key', value)}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Connection ID (Fax Application)"
+                    value={config.telnyx_connection_id || ''}
+                    onChange={(e) => handleConfigChange('telnyx_connection_id', e.target.value)}
+                    fullWidth
+                    helperText="Telnyx portal → Fax → Applications"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="From Number (E.164)"
+                    value={config.telnyx_from_e164 || ''}
+                    onChange={(e) => handleConfigChange('telnyx_from_e164', e.target.value)}
+                    fullWidth
+                    placeholder="+15551234567"
+                    helperText="Default sender; a per-request 'from' overrides it"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Public API URL"
+                    value={config.public_api_url || ''}
+                    onChange={(e) => handleConfigChange('public_api_url', e.target.value)}
+                    fullWidth
+                    size="small"
+                    placeholder="https://your-domain.com"
+                    helperText="Must be HTTPS and publicly accessible for Telnyx to fetch PDFs"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <SecretInput
+                    label="Webhook Public Key (Ed25519, base64)"
+                    value={config.telnyx_public_key || ''}
+                    onChange={(value) => handleConfigChange('telnyx_public_key', value)}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Alert severity="info">
+                    Set webhook_event_url on your Fax Application to: {config.public_api_url || 'https://your-domain.com'}/telnyx-callback
+                    {' '}— webhooks are rejected until the public key above is set (or verification is disabled).
+                  </Alert>
                 </Grid>
               </Grid>
             )}

@@ -85,6 +85,16 @@ class Settings(BaseModel):
     sinch_api_key: str = Field(default_factory=lambda: os.getenv("SINCH_API_KEY", os.getenv("PHAXIO_API_KEY", "")))
     sinch_api_secret: str = Field(default_factory=lambda: os.getenv("SINCH_API_SECRET", os.getenv("PHAXIO_API_SECRET", "")))
 
+    # Telnyx Programmable Fax (v2) — tokenized media_url (pull) flow
+    telnyx_api_key: str = Field(default_factory=lambda: os.getenv("TELNYX_API_KEY", ""))
+    # Programmable Fax Application id (a.k.a. connection id)
+    telnyx_connection_id: str = Field(default_factory=lambda: os.getenv("TELNYX_CONNECTION_ID", ""))
+    telnyx_from_e164: str = Field(default_factory=lambda: os.getenv("TELNYX_FROM_E164", ""))
+    # Base64 Ed25519 public key from the Telnyx portal (webhook signing)
+    telnyx_public_key: str = Field(default_factory=lambda: os.getenv("TELNYX_PUBLIC_KEY", ""))
+    telnyx_verify_signature: bool = Field(default_factory=lambda: os.getenv("TELNYX_VERIFY_SIGNATURE", "true").lower() in {"1", "true", "yes"})
+    telnyx_webhook_tolerance_seconds: int = Field(default_factory=lambda: int(os.getenv("TELNYX_WEBHOOK_TOLERANCE_SECONDS", "300")))
+
     # SignalWire (Compatibility Fax API)
     signalwire_space_url: str = Field(default_factory=lambda: os.getenv("SIGNALWIRE_SPACE_URL", ""))
     signalwire_project_id: str = Field(default_factory=lambda: os.getenv("SIGNALWIRE_PROJECT_ID", ""))
@@ -135,6 +145,7 @@ class Settings(BaseModel):
     sinch_inbound_basic_user: str = Field(default_factory=lambda: os.getenv("SINCH_INBOUND_BASIC_USER", ""))
     sinch_inbound_basic_pass: str = Field(default_factory=lambda: os.getenv("SINCH_INBOUND_BASIC_PASS", ""))
     sinch_inbound_hmac_secret: str = Field(default_factory=lambda: os.getenv("SINCH_INBOUND_HMAC_SECRET", ""))
+    telnyx_inbound_verify_signature: bool = Field(default_factory=lambda: os.getenv("TELNYX_INBOUND_VERIFY_SIGNATURE", "true").lower() in {"1", "true", "yes"})
 
     # Storage backend for inbound artifacts
     storage_backend: str = Field(default_factory=lambda: os.getenv("STORAGE_BACKEND", "local"))  # local | s3
@@ -338,7 +349,7 @@ def valid_backends() -> set[str]:
     keys.discard("_schema")
     if not keys:
         # Fallback to known providers to avoid treating everything as legacy
-        return {"phaxio", "sinch", "sip", "signalwire", "documo", "freeswitch"}
+        return {"phaxio", "sinch", "telnyx", "sip", "signalwire", "documo", "freeswitch"}
     return keys
 
 

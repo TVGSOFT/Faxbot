@@ -65,6 +65,29 @@ vendor/
 
 site/
 
+# Private deploy tooling — carries project IDs, registry paths and service names
 scripts/build_image.sh
 scripts/push_image.sh
 scripts/delete_image.sh
+scripts/deploy_cloudrun.sh
+scripts/cloudrun_patch.py
+
+# Cloud Run service manifests — contain live secrets in plaintext
+# (API_KEY, SINCH_API_SECRET, DATABASE_URL password, FCM private key)
+deploy/cloudrun/
+!deploy/cloudrun/.gitkeep
+
+# Service-account keys and other credential blobs
+*service-account*.json
+*serviceaccount*.json
+*-credentials.json
+*credentials*.json
+gcp-key*.json
+firebase-adminsdk*.json
+*.pem
+*.p12
+*.pfx
+!api/**/testdata/**
+telnyx_public_key*
+*.env.local
+*.env.production

@@ -48,7 +48,7 @@ require_not() {
 title "Environment overview"
 BACKEND="${FAX_BACKEND:-}"
 if [[ -z "$BACKEND" ]]; then
-  fail "FAX_BACKEND is not set (expected: phaxio | sinch | sip)"
+  fail "FAX_BACKEND is not set (expected: phaxio | sinch | telnyx | sip)"
 else
   ok "FAX_BACKEND=$BACKEND"
 fi
@@ -94,6 +94,34 @@ case "$(printf '%s' "${BACKEND}" | tr '[:upper:]' '[:lower:]')" in
       fi
     else
       ok "SINCH_API_KEY/SINCH_API_SECRET present"
+    fi
+    ;;
+  telnyx)
+    title "Telnyx Programmable Fax backend"
+    require TELNYX_API_KEY "Telnyx API key (portal → API Keys)"
+    require TELNYX_CONNECTION_ID "Programmable Fax Application id"
+    require TELNYX_FROM_E164 "Default sender number in E.164 (+1555...)"
+    require PUBLIC_API_URL "Public URL used by Telnyx to fetch PDFs and post webhooks"
+    if istrue "${TELNYX_VERIFY_SIGNATURE:-true}" || istrue "${TELNYX_INBOUND_VERIFY_SIGNATURE:-true}"; then
+      if [[ -z "${TELNYX_PUBLIC_KEY:-}" ]]; then
+        fail "TELNYX_PUBLIC_KEY required while webhook verification is enabled (webhooks are rejected without it)"
+      else
+        ok "TELNYX_PUBLIC_KEY present (webhook signatures verified)"
+      fi
+      if ! istrue "${TELNYX_VERIFY_SIGNATURE:-true}"; then
+        warn "TELNYX_VERIFY_SIGNATURE=false (outbound status webhooks are unauthenticated; inbound is still verified)"
+      fi
+    else
+      warn "Both TELNYX_VERIFY_SIGNATURE and TELNYX_INBOUND_VERIFY_SIGNATURE are false (webhook endpoints are unauthenticated; not recommended for production)"
+    fi
+    if istrue "${ENFORCE_PUBLIC_HTTPS:-false}"; then
+      if [[ "${PUBLIC_API_URL:-}" =~ ^http:// ]] && [[ ! "${PUBLIC_API_URL:-}" =~ localhost|127\.0\.0\.1 ]]; then
+        fail "PUBLIC_API_URL must be HTTPS when ENFORCE_PUBLIC_HTTPS=true"
+      else
+        ok "PUBLIC_API_URL scheme ok"
+      fi
+    else
+      warn "ENFORCE_PUBLIC_HTTPS=false (ok for dev; set true for production)"
     fi
     ;;
   sip)

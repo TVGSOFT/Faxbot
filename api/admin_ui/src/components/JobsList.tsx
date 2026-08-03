@@ -188,12 +188,12 @@ function JobsList({ client }: JobsListProps) {
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ minWidth: 120 }}>App ID</TableCell>
-                    <TableCell sx={{ minWidth: 120 }}>Job ID</TableCell>
+                    <TableCell sx={{ minWidth: 200 }}>Job ID</TableCell>
                     <TableCell sx={{ minWidth: 100, display: { xs: 'none', sm: 'table-cell' } }}>To Number</TableCell>
                     <TableCell sx={{ minWidth: 80 }}>Status</TableCell>
                     <TableCell sx={{ minWidth: 80, display: { xs: 'none', md: 'table-cell' } }}>Backend</TableCell>
                     <TableCell sx={{ minWidth: 60, display: { xs: 'none', md: 'table-cell' } }}>Pages</TableCell>
-                    <TableCell sx={{ minWidth: 150, display: { xs: 'none', lg: 'table-cell' } }}>Error</TableCell>
+                    <TableCell sx={{ minWidth: 250, display: { xs: 'none', lg: 'table-cell' } }}>Error</TableCell>
                     <TableCell sx={{ minWidth: 120 }}>Scheduled</TableCell>
                     <TableCell sx={{ minWidth: 120 }}>Created</TableCell>
                     <TableCell sx={{ minWidth: 120, display: { xs: 'none', sm: 'table-cell' } }}>Updated</TableCell>
@@ -213,8 +213,8 @@ function JobsList({ client }: JobsListProps) {
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Typography variant="body2" fontFamily="monospace" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
-                          {job.id.slice(0, 8)}...
+                        <Typography variant="body2" fontFamily="monospace" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' }, wordBreak: 'break-all' }}>
+                          {job.id}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
@@ -241,19 +241,17 @@ function JobsList({ client }: JobsListProps) {
                           {job.pages || '-'}
                         </Typography>
                       </TableCell>
-                      <TableCell sx={{ maxWidth: 200, display: { xs: 'none', lg: 'table-cell' } }}>
+                      <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>
                         {job.error && (
                           <Typography
                             variant="caption"
                             color="error"
                             sx={{
                               display: 'block',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
+                              whiteSpace: 'pre-wrap',
+                              wordBreak: 'break-word',
                               fontSize: { xs: '0.6rem', sm: '0.75rem' }
                             }}
-                            title={job.error}
                           >
                             {job.error}
                           </Typography>
@@ -266,12 +264,12 @@ function JobsList({ client }: JobsListProps) {
                       </TableCell>
                       <TableCell>
                         <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>
-                          {formatDate(job.created_at).split(' ')[0]}
+                          {formatDate(job.created_at)}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                         <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>
-                          {formatDate(job.updated_at).split(' ')[0]}
+                          {formatDate(job.updated_at)}
                         </Typography>
                       </TableCell>
                     </TableRow>
@@ -284,7 +282,7 @@ function JobsList({ client }: JobsListProps) {
           {jobs.length > 0 && (
             <Box mt={2}>
               <Typography variant="caption" color="text.secondary">
-                Auto-refreshing every 10 seconds • Phone numbers are masked for HIPAA compliance
+                Auto-refreshing every 10 seconds
               </Typography>
             </Box>
           )}

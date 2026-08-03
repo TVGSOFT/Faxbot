@@ -225,6 +225,7 @@ function Settings({ client }: SettingsProps) {
               options={[
                 { value: 'phaxio', label: 'Phaxio (Cloud)' },
                 { value: 'sinch', label: 'Sinch (Cloud)' },
+                { value: 'telnyx', label: 'Telnyx (Cloud)' },
                 { value: 'signalwire', label: 'SignalWire (Cloud)' },
                 { value: 'documo', label: 'Documo (Cloud)' },
                 { value: 'sip', label: 'SIP/Asterisk (Self-hosted)' },
@@ -243,6 +244,7 @@ function Settings({ client }: SettingsProps) {
               options={[
                 { value: 'phaxio', label: 'Phaxio (Webhook)' },
                 { value: 'sinch', label: 'Sinch (Webhook)' },
+                { value: 'telnyx', label: 'Telnyx (Webhook)' },
                 { value: 'sip', label: 'SIP/Asterisk (Internal)' }
               ]}
               showCurrentValue={true}
@@ -708,7 +710,119 @@ function Settings({ client }: SettingsProps) {
                 />
               </Box>
             )}
+
+            {effectiveInbound === 'telnyx' && (
+              <Box sx={{ mt: 2 }}>
+                <ResponsiveSettingItem
+                  icon={settings.inbound?.telnyx?.verify_signature ? <CheckCircleIcon color="success" /> : <WarningIcon color="warning" />}
+                  label="Verify Telnyx Inbound Signature"
+                  value={settings.inbound?.telnyx?.verify_signature ? 'Enabled' : 'Disabled'}
+                  helperText="Verify Ed25519 signatures on inbound (fax.received) webhooks. Requires the Telnyx public key. Only adds strictness — verification is off only when this and the outbound flag are both disabled."
+                  onChange={(value) => handleForm('telnyx_inbound_verify_signature', value === 'true')}
+                  type="select"
+                  options={[
+                    { value: 'true', label: 'Enabled' },
+                    { value: 'false', label: 'Disabled' }
+                  ]}
+                  showCurrentValue={true}
+                />
+
+                <ResponsiveSettingItem
+                  icon={settings.inbound?.telnyx?.public_key_configured ? <CheckCircleIcon color="success" /> : <WarningIcon color="warning" />}
+                  label="Telnyx Public Key"
+                  value={settings.inbound?.telnyx?.public_key_configured ? 'Configured' : 'Not configured'}
+                  helperText="Base64 Ed25519 public key from the Telnyx portal. Webhooks are rejected while verification is on and this is unset."
+                  onChange={(value) => handleForm('telnyx_public_key', value)}
+                  placeholder="TELNYX_PUBLIC_KEY"
+                  type="password"
+                  showCurrentValue={false}
+                />
+
+                <ResponsiveSettingItem
+                  icon={<CloudIcon />}
+                  label="Telnyx Webhook URL"
+                  value={`${settings.security?.public_api_url || form.public_api_url || ''}/telnyx-inbound`}
+                  helperText="Set webhook_event_url on your Telnyx Fax Application. One URL serves inbound and outbound events; /telnyx-callback is an equivalent alias."
+                  onChange={(value) => handleForm('public_api_url', value)}
+                  showCurrentValue={true}
+                />
+              </Box>
+            )}
           </ResponsiveFormSection>
+
+          {/* Telnyx (cloud) */}
+          {(effectiveOutbound === 'telnyx' || form.backend === 'telnyx' || settings.backend.type === 'telnyx') && (
+            <ResponsiveFormSection
+              title="Telnyx Configuration"
+              subtitle="Configure your Telnyx Programmable Fax credentials"
+              icon={<CloudIcon />}
+            >
+              <ResponsiveSettingItem
+                icon={settings.telnyx?.api_key ? <CheckCircleIcon color="success" /> : <WarningIcon color="warning" />}
+                label="API Key"
+                value={settings.telnyx?.api_key || ''}
+                helperText="Telnyx portal → Account → API Keys. Keep this secret safe."
+                onChange={(value) => handleForm('telnyx_api_key', value)}
+                placeholder="TELNYX_API_KEY"
+                type="password"
+                showCurrentValue={!!settings.telnyx?.api_key}
+              />
+
+              <ResponsiveSettingItem
+                icon={settings.telnyx?.connection_id ? <CheckCircleIcon color="success" /> : <WarningIcon color="warning" />}
+                label="Connection ID"
+                value={settings.telnyx?.connection_id || ''}
+                helperText="Your Programmable Fax Application id (Telnyx portal → Fax → Applications)."
+                onChange={(value) => handleForm('telnyx_connection_id', value)}
+                placeholder="TELNYX_CONNECTION_ID"
+                showCurrentValue={!!settings.telnyx?.connection_id}
+              />
+
+              <ResponsiveSettingItem
+                icon={<SettingsIcon />}
+                label="From (fax)"
+                value={settings.telnyx?.from_number || ''}
+                helperText="Default sender in E.164 format (e.g., +13035551234). A per-request 'from' overrides it."
+                onChange={(value) => handleForm('telnyx_from_e164', value)}
+                placeholder="+13035551234"
+                showCurrentValue={!!settings.telnyx?.from_number}
+              />
+
+              <ResponsiveSettingItem
+                icon={settings.telnyx?.public_key_configured ? <CheckCircleIcon color="success" /> : <WarningIcon color="warning" />}
+                label="Webhook Public Key"
+                value={settings.telnyx?.public_key_configured ? 'Configured' : 'Not configured'}
+                helperText="Base64 Ed25519 public key from the Telnyx portal, used to verify webhook signatures."
+                onChange={(value) => handleForm('telnyx_public_key', value)}
+                placeholder="TELNYX_PUBLIC_KEY"
+                type="password"
+                showCurrentValue={false}
+              />
+
+              <ResponsiveSettingItem
+                icon={settings.telnyx?.verify_signature ? <CheckCircleIcon color="success" /> : <WarningIcon color="warning" />}
+                label="Verify Webhook Signatures"
+                value={settings.telnyx?.verify_signature ? 'Enabled' : 'Disabled'}
+                helperText="Recommended. Rejects unsigned or tampered webhooks in both directions; requires the public key above."
+                onChange={(value) => handleForm('telnyx_verify_signature', value === 'true')}
+                type="select"
+                options={[
+                  { value: 'true', label: 'Enabled' },
+                  { value: 'false', label: 'Disabled' }
+                ]}
+                showCurrentValue={true}
+              />
+
+              <ResponsiveSettingItem
+                icon={<CloudIcon />}
+                label="Webhook URL"
+                value={`${settings.security?.public_api_url || form.public_api_url || ''}/telnyx-callback`}
+                helperText="Set as webhook_event_url on the Fax Application. Telnyx also fetches the PDF from PUBLIC_API_URL, which must be publicly reachable over HTTPS."
+                onChange={(value) => handleForm('public_api_url', value)}
+                showCurrentValue={true}
+              />
+            </ResponsiveFormSection>
+          )}
 
           {/* SignalWire (cloud) */}
           {(form.backend === 'signalwire' || settings.backend.type === 'signalwire') && (
@@ -1048,7 +1162,7 @@ function Settings({ client }: SettingsProps) {
             </ResponsiveFormSection>
         </Stack>
         <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-          <Button variant="contained" onClick={async () => { try { setLoading(true); setError(null); setRestartHint(false); const p:any={}; if (form.outbound_backend) p.outbound_backend=form.outbound_backend; else if (form.backend) p.backend=form.backend; if (form.inbound_backend) { p.inbound_backend=form.inbound_backend; p.inbound_enabled=true; } if (form.require_api_key!==undefined) p.require_api_key=!!form.require_api_key; if (form.enforce_public_https!==undefined) p.enforce_public_https=!!form.enforce_public_https; if (form.public_api_url) p.public_api_url=String(form.public_api_url); if (form.enable_persisted_settings!==undefined) p.enable_persisted_settings=!!form.enable_persisted_settings; if (form.feature_v3_plugins!==undefined) p.feature_v3_plugins=!!form.feature_v3_plugins; if (form.feature_plugin_install!==undefined) p.feature_plugin_install=!!form.feature_plugin_install; if ((form.outbound_backend||form.backend)==='phaxio' && form.phaxio_api_key) p.phaxio_api_key=form.phaxio_api_key; if ((form.outbound_backend||form.backend)==='phaxio' && form.phaxio_api_secret) p.phaxio_api_secret=form.phaxio_api_secret; if ((form.outbound_backend||form.backend)==='sinch' && form.sinch_project_id) p.sinch_project_id=form.sinch_project_id; if ((form.outbound_backend||form.backend)==='sinch' && form.sinch_api_key) p.sinch_api_key=form.sinch_api_key; if ((form.outbound_backend||form.backend)==='sinch' && form.sinch_api_secret) p.sinch_api_secret=form.sinch_api_secret; if ((form.outbound_backend||form.backend)==='sip'){ if (form.ami_host) p.ami_host=form.ami_host; if (form.ami_port) p.ami_port=Number(form.ami_port); if (form.ami_username) p.ami_username=form.ami_username; if (form.ami_password) p.ami_password=form.ami_password; if (form.fax_station_id) p.fax_station_id=form.fax_station_id; } if (form.inbound_retention_days!==undefined) p.inbound_retention_days=Number(form.inbound_retention_days); if (form.inbound_token_ttl_minutes!==undefined) p.inbound_token_ttl_minutes=Number(form.inbound_token_ttl_minutes); if (form.asterisk_inbound_secret) p.asterisk_inbound_secret=form.asterisk_inbound_secret; if (form.phaxio_inbound_verify_signature!==undefined) p.phaxio_inbound_verify_signature=!!form.phaxio_inbound_verify_signature; if (form.sinch_inbound_verify_signature!==undefined) p.sinch_inbound_verify_signature=!!form.sinch_inbound_verify_signature; if (form.sinch_inbound_basic_user) p.sinch_inbound_basic_user=form.sinch_inbound_basic_user; if (form.sinch_inbound_basic_pass) p.sinch_inbound_basic_pass=form.sinch_inbound_basic_pass; if (form.sinch_inbound_hmac_secret) p.sinch_inbound_hmac_secret=form.sinch_inbound_hmac_secret; if (form.storage_backend) p.storage_backend=form.storage_backend; if (form.s3_bucket) p.s3_bucket=form.s3_bucket; if (form.s3_region) p.s3_region=form.s3_region; if (form.s3_prefix) p.s3_prefix=form.s3_prefix; if (form.s3_endpoint_url) p.s3_endpoint_url=form.s3_endpoint_url; if (form.s3_kms_key_id) p.s3_kms_key_id=form.s3_kms_key_id; if (form.max_file_size_mb!==undefined) p.max_file_size_mb=Number(form.max_file_size_mb); if (form.max_requests_per_minute!==undefined) p.max_requests_per_minute=Number(form.max_requests_per_minute); if (form.inbound_list_rpm!==undefined) p.inbound_list_rpm=Number(form.inbound_list_rpm); if (form.inbound_get_rpm!==undefined) p.inbound_get_rpm=Number(form.inbound_get_rpm); const res = await client.updateSettings(p); await client.reloadSettings(); await fetchSettings(); setSnack('Settings applied and reloaded'); if (res && res._meta && res._meta.restart_recommended) setRestartHint(true); if (p.enable_persisted_settings!==undefined) setPersistedEnabled(!!p.enable_persisted_settings); } catch(e:any){ setError(e?.message||'Failed to apply settings'); } finally { setLoading(false);} }} disabled={loading}>
+          <Button variant="contained" onClick={async () => { try { setLoading(true); setError(null); setRestartHint(false); const p:any={}; if (form.outbound_backend) p.outbound_backend=form.outbound_backend; else if (form.backend) p.backend=form.backend; if (form.inbound_backend) { p.inbound_backend=form.inbound_backend; p.inbound_enabled=true; } if (form.require_api_key!==undefined) p.require_api_key=!!form.require_api_key; if (form.enforce_public_https!==undefined) p.enforce_public_https=!!form.enforce_public_https; if (form.public_api_url) p.public_api_url=String(form.public_api_url); if (form.enable_persisted_settings!==undefined) p.enable_persisted_settings=!!form.enable_persisted_settings; if (form.feature_v3_plugins!==undefined) p.feature_v3_plugins=!!form.feature_v3_plugins; if (form.feature_plugin_install!==undefined) p.feature_plugin_install=!!form.feature_plugin_install; if ((form.outbound_backend||form.backend)==='phaxio' && form.phaxio_api_key) p.phaxio_api_key=form.phaxio_api_key; if ((form.outbound_backend||form.backend)==='phaxio' && form.phaxio_api_secret) p.phaxio_api_secret=form.phaxio_api_secret; if ((form.outbound_backend||form.backend)==='sinch' && form.sinch_project_id) p.sinch_project_id=form.sinch_project_id; if ((form.outbound_backend||form.backend)==='sinch' && form.sinch_api_key) p.sinch_api_key=form.sinch_api_key; if ((form.outbound_backend||form.backend)==='sinch' && form.sinch_api_secret) p.sinch_api_secret=form.sinch_api_secret; if ((form.outbound_backend||form.backend)==='telnyx'){ if (form.telnyx_api_key) p.telnyx_api_key=form.telnyx_api_key; if (form.telnyx_connection_id) p.telnyx_connection_id=form.telnyx_connection_id; if (form.telnyx_from_e164) p.telnyx_from_e164=form.telnyx_from_e164; if (form.telnyx_verify_signature!==undefined) p.telnyx_verify_signature=!!form.telnyx_verify_signature; } if (form.telnyx_public_key) p.telnyx_public_key=form.telnyx_public_key; if (form.telnyx_inbound_verify_signature!==undefined) p.telnyx_inbound_verify_signature=!!form.telnyx_inbound_verify_signature; if ((form.outbound_backend||form.backend)==='sip'){ if (form.ami_host) p.ami_host=form.ami_host; if (form.ami_port) p.ami_port=Number(form.ami_port); if (form.ami_username) p.ami_username=form.ami_username; if (form.ami_password) p.ami_password=form.ami_password; if (form.fax_station_id) p.fax_station_id=form.fax_station_id; } if (form.inbound_retention_days!==undefined) p.inbound_retention_days=Number(form.inbound_retention_days); if (form.inbound_token_ttl_minutes!==undefined) p.inbound_token_ttl_minutes=Number(form.inbound_token_ttl_minutes); if (form.asterisk_inbound_secret) p.asterisk_inbound_secret=form.asterisk_inbound_secret; if (form.phaxio_inbound_verify_signature!==undefined) p.phaxio_inbound_verify_signature=!!form.phaxio_inbound_verify_signature; if (form.sinch_inbound_verify_signature!==undefined) p.sinch_inbound_verify_signature=!!form.sinch_inbound_verify_signature; if (form.sinch_inbound_basic_user) p.sinch_inbound_basic_user=form.sinch_inbound_basic_user; if (form.sinch_inbound_basic_pass) p.sinch_inbound_basic_pass=form.sinch_inbound_basic_pass; if (form.sinch_inbound_hmac_secret) p.sinch_inbound_hmac_secret=form.sinch_inbound_hmac_secret; if (form.storage_backend) p.storage_backend=form.storage_backend; if (form.s3_bucket) p.s3_bucket=form.s3_bucket; if (form.s3_region) p.s3_region=form.s3_region; if (form.s3_prefix) p.s3_prefix=form.s3_prefix; if (form.s3_endpoint_url) p.s3_endpoint_url=form.s3_endpoint_url; if (form.s3_kms_key_id) p.s3_kms_key_id=form.s3_kms_key_id; if (form.max_file_size_mb!==undefined) p.max_file_size_mb=Number(form.max_file_size_mb); if (form.max_requests_per_minute!==undefined) p.max_requests_per_minute=Number(form.max_requests_per_minute); if (form.inbound_list_rpm!==undefined) p.inbound_list_rpm=Number(form.inbound_list_rpm); if (form.inbound_get_rpm!==undefined) p.inbound_get_rpm=Number(form.inbound_get_rpm); const res = await client.updateSettings(p); await client.reloadSettings(); await fetchSettings(); setSnack('Settings applied and reloaded'); if (res && res._meta && res._meta.restart_recommended) setRestartHint(true); if (p.enable_persisted_settings!==undefined) setPersistedEnabled(!!p.enable_persisted_settings); } catch(e:any){ setError(e?.message||'Failed to apply settings'); } finally { setLoading(false);} }} disabled={loading}>
             Apply & Reload
           </Button>
           <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchSettings} disabled={loading}>
